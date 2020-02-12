@@ -1,0 +1,46 @@
+// Copyright 2019 Luis Guillén Civera <luisguillenc@gmail.com>. View LICENSE.
+
+syntax = "proto3";
+
+import "github.com/golang/protobuf/ptypes/empty/empty.proto";
+
+package luids.xlist.v1;
+option go_package = "github.com/luids-io/api/protogen/xlistpb";
+
+service Check {
+  rpc Check(CheckRequest) returns (CheckResponse) {}
+  rpc Resources(google.protobuf.Empty) returns (ResourcesResponse) {}
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
+
+//enums
+enum Resource {
+  IPV4 = 0;
+  IPV6 = 1;
+  DOMAIN = 2;
+}
+
+message CheckRequest {
+  Request request = 1;
+}
+
+message CheckResponse {
+  Response response = 1;
+}
+
+message ResourcesResponse {
+  repeated Resource resources = 1;
+}
+
+// NOTE: request and response are in separate messages because they
+// will be useful in a future multichecking api
+message Request {
+  string name = 1;
+  Resource resource = 2;
+}
+
+message Response {
+  bool result = 1;
+  string reason = 2;
+  int32 TTL = 3 ;
+}

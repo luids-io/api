@@ -1,0 +1,23 @@
+// Copyright 2019 Luis Guillén Civera <luisguillenc@gmail.com>. View LICENSE.
+
+syntax = "proto3";
+
+import "github.com/luids-io/api/schemas/event/common.proto";
+
+package luids.event.v1;
+option go_package = "github.com/luids-io/api/protogen/eventpb";
+
+service Archive {
+   rpc SaveEvent (SaveEventRequest) returns (SaveEventResponse) {}
+}
+
+message SaveEventRequest {
+  Event event = 1;
+}
+
+message SaveEventResponse {
+  string eventID = 1;
+}
+
+
+

@@ -1,0 +1,36 @@
+// Copyright 2019 Luis Guillén Civera <luisguillenc@gmail.com>. View LICENSE.
+
+syntax = "proto3";
+
+import "github.com/golang/protobuf/ptypes/empty/empty.proto";
+import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
+
+package luids.dnsutil.v1;
+option go_package = "github.com/luids-io/api/protogen/dnsutilpb";
+
+service ResolvCollect {
+    rpc Collect (ResolvCollectRequest) returns (google.protobuf.Empty) {}
+}
+
+service ResolvCheck {
+    rpc Check (ResolvCheckRequest) returns (ResolvCheckResponse) {}
+}
+
+message ResolvCollectRequest {
+    string client_ip = 1;
+    string name      = 2;
+    repeated string resolved_ips = 3;
+}
+
+message ResolvCheckRequest {
+    string client_ip   = 1;
+    string resolved_ip = 2;
+    string name        = 3;
+}
+
+message ResolvCheckResponse {
+    bool result = 1;
+    google.protobuf.Timestamp last_ts  = 2; 
+    google.protobuf.Timestamp store_ts = 3; 
+}
+

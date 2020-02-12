@@ -1,0 +1,160 @@
+// Copyright 2019 Luis Guillén Civera <luisguillenc@gmail.com>. View LICENSE.
+
+syntax = "proto3";
+
+import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
+
+package luids.tlsutil.v1;
+option go_package = "github.com/luids-io/api/protogen/tlsutilpb";
+
+
+message CertificateData {
+    string digest = 1;
+    bytes raw = 2;
+}
+
+message RecordData {
+    string stream_id = 1;
+    google.protobuf.Timestamp timestamp = 2;
+    int32 type       = 3;
+    int32 len        = 4;
+    bool ciphered    = 5;
+    bool fragmented  = 6;
+    int32 msgs_count = 7;
+}
+
+message ConnectionData {
+    string id = 1;
+
+    message ConnectionInfo {
+        google.protobuf.Timestamp start = 1;
+        google.protobuf.Timestamp end = 2;
+        int64 duration_nsecs = 3;
+        string client_ip = 4;
+        string server_ip = 5;
+        uint32 client_port = 6;
+        uint32 server_port = 7;
+        bool uncompleted = 8;
+        bool detected_error = 9;
+        bool completed_handshake = 10;
+    }
+    ConnectionInfo info = 2;
+
+    message StreamData {
+        string id = 1;
+
+        message StreamInfo {
+            google.protobuf.Timestamp start = 1;
+            google.protobuf.Timestamp end = 2;
+            int64 duration_nsecs = 3;
+            bool saw_start = 4;
+            bool saw_end = 5;
+            string src_ip = 6;
+            string dst_ip = 7;
+            uint32 src_port = 8;
+            uint32 dst_port = 9;
+            int64 bytes = 10;
+            int64 packets = 11;
+            float bps = 12;
+            float pps = 13;
+            bool detected_error = 14;
+            string error_type = 15;
+            google.protobuf.Timestamp error_time = 16;
+        }   
+        StreamInfo info = 2;
+
+        message PlaintextSummary {
+            int64 hsk_records = 1;
+            int64 hsk_bytes = 2;
+            int64 alert_records = 3;
+            int64 alert_bytes = 4;
+            int64 cct_records = 5;
+            int64 cct_bytes = 6;
+            int64 appdata_records = 7;
+            int64 appdata_bytes = 8;
+            int32 fragmented_records = 9;
+            int32 max_messages = 10;
+        }
+        PlaintextSummary plaintext_acc = 3;
+
+        message CiphertextSummary {
+            int64 hsk_records = 1;
+            int64 hsk_bytes = 2;
+            int64 alert_records = 3;
+            int64 alert_bytes = 4;
+            int64 cct_records = 5;
+            int64 cct_bytes = 6;
+            int64 appdata_records = 7;
+            int64 appdata_bytes = 8;
+        }
+        CiphertextSummary ciphertext_acc = 4;
+
+        message HandshakeItem {
+            uint32 htype = 1;
+            uint32 len = 2;
+        }
+        repeated HandshakeItem handshakes = 5;
+        int32 handshake_sum = 6;
+    }
+    StreamData send_stream = 3;
+    StreamData rcvd_stream = 4;
+  
+    message ExtensionItem {
+        uint32 etype = 1;
+        uint32 len = 2;
+    }
+
+    message DecodedInfo {
+        string sni = 1;
+        repeated uint32 signature_schemes = 2;
+        repeated uint32 supported_versions = 3;
+        repeated uint32 supported_groups = 4;
+        repeated uint32 ec_point_formats = 5;
+        bool oscp = 6;
+        repeated string alpns = 7;
+        repeated uint32 key_share_entries = 8;
+        repeated uint32 psk_key_exchange_modes = 9;
+    }
+
+    message ClientHelloData {
+        uint32 client_version = 1;
+        uint32 random_len = 2;
+        uint32 session_id_len = 3;
+        bytes session_id = 4;
+        uint32 cipher_suites_len = 5;
+        repeated uint32 cipher_suites = 6;
+        repeated uint32 compress_methods = 7;
+        int32 extension_len = 8;
+        repeated ExtensionItem extensions = 9;
+        DecodedInfo extension_info = 10;
+        bool use_grease = 11;
+        string ja3 = 12;
+        string ja3_digest = 13;
+    }
+    ClientHelloData client_hello = 5;
+
+    message ServerHelloData {
+        uint32 server_version = 1;
+        uint32 random_len = 2;
+        uint32 session_id_len = 3;
+        bytes session_id = 4;
+        uint32 cipher_suite_sel = 5;
+        uint32 compress_method_sel = 6;
+        int32 extension_len = 7;
+        repeated ExtensionItem extensions = 8;
+        DecodedInfo extension_info = 9;
+    }
+    ServerHelloData server_hello = 6;
+
+    message CertSummary {
+        string digest = 1;
+        string issuer = 2;
+        string subject = 3;
+        bool is_ca = 4;  
+    }
+    repeated CertSummary client_certs = 7;
+    repeated CertSummary server_certs = 8;
+
+    repeated string tags = 9;
+}
+

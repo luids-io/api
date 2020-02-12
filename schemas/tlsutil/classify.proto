@@ -1,0 +1,33 @@
+// Copyright 2019 Luis Guillén Civera <luisguillenc@gmail.com>. View LICENSE.
+
+syntax = "proto3";
+
+import "github.com/luids-io/api/schemas/tlsutil/common.proto";
+
+package luids.tlsutil.v1;
+option go_package = "github.com/luids-io/api/protogen/tlsutilpb";
+
+service Classify {
+    rpc Connections (ClassifyConnectionRequest) returns (ClassifyConnectionResponse) {}
+}
+
+message ClassifyConnectionRequest {
+    message Request {
+         string id = 1;
+         ConnectionData connection = 2;
+    }
+    repeated Request requests = 1;
+}
+
+message ClassifyConnectionResponse {
+    message Response {
+         string id = 1;
+         message Result {
+             string Label = 1;
+             float prob = 2;
+         }
+         repeated Result results = 2;
+         string err = 3;
+    }
+    repeated Response responses = 1;
+}

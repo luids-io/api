@@ -1,0 +1,36 @@
+// Copyright 2019 Luis Guillén Civera <luisguillenc@gmail.com>. View LICENSE.
+
+syntax = "proto3";
+
+import "github.com/luids-io/api/schemas/tlsutil/common.proto";
+import "github.com/golang/protobuf/ptypes/empty/empty.proto";
+
+package luids.tlsutil.v1;
+option go_package = "github.com/luids-io/api/protogen/tlsutilpb";
+
+service Archive {
+    rpc SaveConnection (SaveConnectionRequest) returns (SaveConnectionResponse) {}
+    rpc SaveCertificate (SaveCertificateRequest) returns (SaveCertificateResponse) {}
+    rpc StreamRecords (stream SaveRecordRequest) returns (google.protobuf.Empty) {}
+}
+
+message SaveConnectionRequest {
+    ConnectionData connection = 1;
+}
+
+message SaveConnectionResponse {
+    string id = 1;
+}
+
+message SaveCertificateRequest {
+    CertificateData certificate = 1;
+}
+
+message SaveCertificateResponse {
+    string id = 1;
+}
+
+message SaveRecordRequest {
+    RecordData record = 1;
+}
+
