@@ -18,6 +18,9 @@ enum Resource {
   IPV4 = 0;
   IPV6 = 1;
   DOMAIN = 2;
+  MD5 = 3;
+  SHA1 = 4;
+  SHA256 = 5;
 }
 
 message CheckRequest {
