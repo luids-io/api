@@ -8,18 +8,14 @@ package luids.tlsutil.v1;
 option go_package = "github.com/luids-io/api/protogen/tlsutilpb";
 
 service Classify {
-    rpc Connections (ClassifyConnectionRequest) returns (ClassifyConnectionResponse) {}
+    rpc Connections (ClassifyConnectionsRequest) returns (ClassifyConnectionsResponse) {}
 }
 
-message ClassifyConnectionRequest {
-    message Request {
-         string id = 1;
-         ConnectionData connection = 2;
-    }
-    repeated Request requests = 1;
+message ClassifyConnectionsRequest {
+    repeated ConnectionData connections = 1;
 }
 
-message ClassifyConnectionResponse {
+message ClassifyConnectionsResponse {
     message Response {
          string id = 1;
          message Result {

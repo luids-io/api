@@ -11,13 +11,13 @@ import (
 
 	pb "github.com/luids-io/api/protogen/tlsutilpb"
 	"github.com/luids-io/api/tlsutil/encoding"
-	"github.com/luids-io/core/brain/classify"
+	"github.com/luids-io/core/tlsutil"
 )
 
 // Service provides a grpc wrapper
 type Service struct {
 	opts       serviceOpts
-	classifier classify.Classifier
+	classifier tlsutil.Classifier
 }
 
 type serviceOpts struct {
@@ -45,7 +45,7 @@ func SetDataBuff(i int) ServiceOption {
 }
 
 // NewService returns a new Service for the cheker
-func NewService(c classify.Classifier, opt ...ServiceOption) *Service {
+func NewService(c tlsutil.Classifier, opt ...ServiceOption) *Service {
 	opts := defaultServiceOpts
 	for _, o := range opt {
 		o(&opts)
@@ -59,42 +59,40 @@ func RegisterServer(server *grpc.Server, service *Service) {
 }
 
 // Connections implements grpc interface
-func (s *Service) Connections(ctx context.Context, in *pb.ClassifyConnectionRequest) (*pb.ClassifyConnectionResponse, error) {
+func (s *Service) Connections(ctx context.Context, in *pb.ClassifyConnectionsRequest) (*pb.ClassifyConnectionsResponse, error) {
 	// prepare request
-	if len(in.Requests) == 0 {
-		rpcerr := status.Error(codes.InvalidArgument, "requests is empty")
+	if len(in.GetConnections()) == 0 {
+		rpcerr := status.Error(codes.InvalidArgument, "connections is empty")
 		return nil, rpcerr
 	}
-	requests := make([]classify.Request, 0, len(in.Requests))
-	for _, r := range in.Requests {
-		requests = append(requests, classify.Request{
-			ID:   r.GetId(),
-			Data: encoding.ConnectionData(r.GetConnection()),
-		})
+	requests := make([]*tlsutil.ConnectionData, 0, len(in.GetConnections()))
+	for _, r := range in.GetConnections() {
+		cdata := encoding.ConnectionData(r)
+		requests = append(requests, cdata)
 	}
 	// do request
-	responses, err := s.classifier.Classify(ctx, requests)
+	responses, err := s.classifier.ClassifyConnections(ctx, requests)
 	if err != nil {
 		return nil, s.mapError(err)
 	}
 	// create response
-	retResponses := make([]*pb.ClassifyConnectionResponse_Response, 0, len(responses))
+	retResponses := make([]*pb.ClassifyConnectionsResponse_Response, 0, len(responses))
 	for _, r := range responses {
-		resp := &pb.ClassifyConnectionResponse_Response{Id: r.ID}
+		resp := &pb.ClassifyConnectionsResponse_Response{Id: r.ID}
 		retResponses = append(retResponses, resp)
 		if r.Err != nil {
 			resp.Err = r.Err.Error()
 			continue
 		}
-		resp.Results = make([]*pb.ClassifyConnectionResponse_Response_Result, 0, len(r.Results))
+		resp.Results = make([]*pb.ClassifyConnectionsResponse_Response_Result, 0, len(r.Results))
 		for _, result := range r.Results {
-			resp.Results = append(resp.Results, &pb.ClassifyConnectionResponse_Response_Result{
+			resp.Results = append(resp.Results, &pb.ClassifyConnectionsResponse_Response_Result{
 				Label: result.Label,
 				Prob:  result.Prob},
 			)
 		}
 	}
-	return &pb.ClassifyConnectionResponse{Responses: retResponses}, nil
+	return &pb.ClassifyConnectionsResponse{Responses: retResponses}, nil
 }
 
 //mapping errors

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/luisguillenc/yalogi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/luids-io/api/tlsutil/encoding"
 	"github.com/luids-io/core/brain/classify"
 	"github.com/luids-io/core/tlsutil"
-	"github.com/luisguillenc/yalogi"
 )
 
 // Client provides a grpc client that implements a tlsutil machine learning classifier
@@ -81,25 +81,18 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	return c
 }
 
-// Classify implements classify.Classifier
-func (c *Client) Classify(ctx context.Context, requests []classify.Request) ([]classify.Response, error) {
+// ClassifyConnections implements tlsutil.Classifier
+func (c *Client) ClassifyConnections(ctx context.Context, requests []*tlsutil.ConnectionData) ([]classify.Response, error) {
 	if !c.started {
 		return nil, errors.New("client closed")
 	}
 	// prepare requests
-	sendRequests := make([]*pb.ClassifyConnectionRequest_Request, 0, len(requests))
-	for _, r := range requests {
-		cdata, ok := r.Data.(*tlsutil.ConnectionData)
-		if !ok {
-			return nil, fmt.Errorf("request id %s is not valid", r.ID)
-		}
-		sendRequests = append(sendRequests, &pb.ClassifyConnectionRequest_Request{
-			Id:         r.ID,
-			Connection: encoding.ConnectionDataPB(cdata),
-		})
+	sendRequests := make([]*pb.ConnectionData, 0, len(requests))
+	for _, cdata := range requests {
+		sendRequests = append(sendRequests, encoding.ConnectionDataPB(cdata))
 	}
 	// do classify
-	pbres, err := c.client.Connections(ctx, &pb.ClassifyConnectionRequest{Requests: sendRequests})
+	pbres, err := c.client.Connections(ctx, &pb.ClassifyConnectionsRequest{Connections: sendRequests})
 	if err != nil {
 		return nil, err
 	}

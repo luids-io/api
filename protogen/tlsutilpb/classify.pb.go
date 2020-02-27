@@ -24,187 +24,140 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type ClassifyConnectionRequest struct {
-	Requests             []*ClassifyConnectionRequest_Request `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                             `json:"-"`
-	XXX_unrecognized     []byte                               `json:"-"`
-	XXX_sizecache        int32                                `json:"-"`
+type ClassifyConnectionsRequest struct {
+	Connections          []*ConnectionData `protobuf:"bytes,1,rep,name=connections,proto3" json:"connections,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
-func (m *ClassifyConnectionRequest) Reset()         { *m = ClassifyConnectionRequest{} }
-func (m *ClassifyConnectionRequest) String() string { return proto.CompactTextString(m) }
-func (*ClassifyConnectionRequest) ProtoMessage()    {}
-func (*ClassifyConnectionRequest) Descriptor() ([]byte, []int) {
+func (m *ClassifyConnectionsRequest) Reset()         { *m = ClassifyConnectionsRequest{} }
+func (m *ClassifyConnectionsRequest) String() string { return proto.CompactTextString(m) }
+func (*ClassifyConnectionsRequest) ProtoMessage()    {}
+func (*ClassifyConnectionsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_29fe88afc6e3cb8b, []int{0}
 }
 
-func (m *ClassifyConnectionRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ClassifyConnectionRequest.Unmarshal(m, b)
+func (m *ClassifyConnectionsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ClassifyConnectionsRequest.Unmarshal(m, b)
 }
-func (m *ClassifyConnectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ClassifyConnectionRequest.Marshal(b, m, deterministic)
+func (m *ClassifyConnectionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ClassifyConnectionsRequest.Marshal(b, m, deterministic)
 }
-func (m *ClassifyConnectionRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ClassifyConnectionRequest.Merge(m, src)
+func (m *ClassifyConnectionsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClassifyConnectionsRequest.Merge(m, src)
 }
-func (m *ClassifyConnectionRequest) XXX_Size() int {
-	return xxx_messageInfo_ClassifyConnectionRequest.Size(m)
+func (m *ClassifyConnectionsRequest) XXX_Size() int {
+	return xxx_messageInfo_ClassifyConnectionsRequest.Size(m)
 }
-func (m *ClassifyConnectionRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ClassifyConnectionRequest.DiscardUnknown(m)
+func (m *ClassifyConnectionsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClassifyConnectionsRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ClassifyConnectionRequest proto.InternalMessageInfo
+var xxx_messageInfo_ClassifyConnectionsRequest proto.InternalMessageInfo
 
-func (m *ClassifyConnectionRequest) GetRequests() []*ClassifyConnectionRequest_Request {
+func (m *ClassifyConnectionsRequest) GetConnections() []*ConnectionData {
 	if m != nil {
-		return m.Requests
+		return m.Connections
 	}
 	return nil
 }
 
-type ClassifyConnectionRequest_Request struct {
-	Id                   string          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Connection           *ConnectionData `protobuf:"bytes,2,opt,name=connection,proto3" json:"connection,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
-	XXX_unrecognized     []byte          `json:"-"`
-	XXX_sizecache        int32           `json:"-"`
+type ClassifyConnectionsResponse struct {
+	Responses            []*ClassifyConnectionsResponse_Response `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                `json:"-"`
+	XXX_unrecognized     []byte                                  `json:"-"`
+	XXX_sizecache        int32                                   `json:"-"`
 }
 
-func (m *ClassifyConnectionRequest_Request) Reset()         { *m = ClassifyConnectionRequest_Request{} }
-func (m *ClassifyConnectionRequest_Request) String() string { return proto.CompactTextString(m) }
-func (*ClassifyConnectionRequest_Request) ProtoMessage()    {}
-func (*ClassifyConnectionRequest_Request) Descriptor() ([]byte, []int) {
-	return fileDescriptor_29fe88afc6e3cb8b, []int{0, 0}
-}
-
-func (m *ClassifyConnectionRequest_Request) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ClassifyConnectionRequest_Request.Unmarshal(m, b)
-}
-func (m *ClassifyConnectionRequest_Request) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ClassifyConnectionRequest_Request.Marshal(b, m, deterministic)
-}
-func (m *ClassifyConnectionRequest_Request) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ClassifyConnectionRequest_Request.Merge(m, src)
-}
-func (m *ClassifyConnectionRequest_Request) XXX_Size() int {
-	return xxx_messageInfo_ClassifyConnectionRequest_Request.Size(m)
-}
-func (m *ClassifyConnectionRequest_Request) XXX_DiscardUnknown() {
-	xxx_messageInfo_ClassifyConnectionRequest_Request.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ClassifyConnectionRequest_Request proto.InternalMessageInfo
-
-func (m *ClassifyConnectionRequest_Request) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
-
-func (m *ClassifyConnectionRequest_Request) GetConnection() *ConnectionData {
-	if m != nil {
-		return m.Connection
-	}
-	return nil
-}
-
-type ClassifyConnectionResponse struct {
-	Responses            []*ClassifyConnectionResponse_Response `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                               `json:"-"`
-	XXX_unrecognized     []byte                                 `json:"-"`
-	XXX_sizecache        int32                                  `json:"-"`
-}
-
-func (m *ClassifyConnectionResponse) Reset()         { *m = ClassifyConnectionResponse{} }
-func (m *ClassifyConnectionResponse) String() string { return proto.CompactTextString(m) }
-func (*ClassifyConnectionResponse) ProtoMessage()    {}
-func (*ClassifyConnectionResponse) Descriptor() ([]byte, []int) {
+func (m *ClassifyConnectionsResponse) Reset()         { *m = ClassifyConnectionsResponse{} }
+func (m *ClassifyConnectionsResponse) String() string { return proto.CompactTextString(m) }
+func (*ClassifyConnectionsResponse) ProtoMessage()    {}
+func (*ClassifyConnectionsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_29fe88afc6e3cb8b, []int{1}
 }
 
-func (m *ClassifyConnectionResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ClassifyConnectionResponse.Unmarshal(m, b)
+func (m *ClassifyConnectionsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ClassifyConnectionsResponse.Unmarshal(m, b)
 }
-func (m *ClassifyConnectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ClassifyConnectionResponse.Marshal(b, m, deterministic)
+func (m *ClassifyConnectionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ClassifyConnectionsResponse.Marshal(b, m, deterministic)
 }
-func (m *ClassifyConnectionResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ClassifyConnectionResponse.Merge(m, src)
+func (m *ClassifyConnectionsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClassifyConnectionsResponse.Merge(m, src)
 }
-func (m *ClassifyConnectionResponse) XXX_Size() int {
-	return xxx_messageInfo_ClassifyConnectionResponse.Size(m)
+func (m *ClassifyConnectionsResponse) XXX_Size() int {
+	return xxx_messageInfo_ClassifyConnectionsResponse.Size(m)
 }
-func (m *ClassifyConnectionResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ClassifyConnectionResponse.DiscardUnknown(m)
+func (m *ClassifyConnectionsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClassifyConnectionsResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ClassifyConnectionResponse proto.InternalMessageInfo
+var xxx_messageInfo_ClassifyConnectionsResponse proto.InternalMessageInfo
 
-func (m *ClassifyConnectionResponse) GetResponses() []*ClassifyConnectionResponse_Response {
+func (m *ClassifyConnectionsResponse) GetResponses() []*ClassifyConnectionsResponse_Response {
 	if m != nil {
 		return m.Responses
 	}
 	return nil
 }
 
-type ClassifyConnectionResponse_Response struct {
-	Id                   string                                        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Results              []*ClassifyConnectionResponse_Response_Result `protobuf:"bytes,2,rep,name=results,proto3" json:"results,omitempty"`
-	Err                  string                                        `protobuf:"bytes,3,opt,name=err,proto3" json:"err,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                                      `json:"-"`
-	XXX_unrecognized     []byte                                        `json:"-"`
-	XXX_sizecache        int32                                         `json:"-"`
+type ClassifyConnectionsResponse_Response struct {
+	Id                   string                                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Results              []*ClassifyConnectionsResponse_Response_Result `protobuf:"bytes,2,rep,name=results,proto3" json:"results,omitempty"`
+	Err                  string                                         `protobuf:"bytes,3,opt,name=err,proto3" json:"err,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                       `json:"-"`
+	XXX_unrecognized     []byte                                         `json:"-"`
+	XXX_sizecache        int32                                          `json:"-"`
 }
 
-func (m *ClassifyConnectionResponse_Response) Reset()         { *m = ClassifyConnectionResponse_Response{} }
-func (m *ClassifyConnectionResponse_Response) String() string { return proto.CompactTextString(m) }
-func (*ClassifyConnectionResponse_Response) ProtoMessage()    {}
-func (*ClassifyConnectionResponse_Response) Descriptor() ([]byte, []int) {
+func (m *ClassifyConnectionsResponse_Response) Reset()         { *m = ClassifyConnectionsResponse_Response{} }
+func (m *ClassifyConnectionsResponse_Response) String() string { return proto.CompactTextString(m) }
+func (*ClassifyConnectionsResponse_Response) ProtoMessage()    {}
+func (*ClassifyConnectionsResponse_Response) Descriptor() ([]byte, []int) {
 	return fileDescriptor_29fe88afc6e3cb8b, []int{1, 0}
 }
 
-func (m *ClassifyConnectionResponse_Response) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ClassifyConnectionResponse_Response.Unmarshal(m, b)
+func (m *ClassifyConnectionsResponse_Response) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ClassifyConnectionsResponse_Response.Unmarshal(m, b)
 }
-func (m *ClassifyConnectionResponse_Response) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ClassifyConnectionResponse_Response.Marshal(b, m, deterministic)
+func (m *ClassifyConnectionsResponse_Response) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ClassifyConnectionsResponse_Response.Marshal(b, m, deterministic)
 }
-func (m *ClassifyConnectionResponse_Response) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ClassifyConnectionResponse_Response.Merge(m, src)
+func (m *ClassifyConnectionsResponse_Response) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClassifyConnectionsResponse_Response.Merge(m, src)
 }
-func (m *ClassifyConnectionResponse_Response) XXX_Size() int {
-	return xxx_messageInfo_ClassifyConnectionResponse_Response.Size(m)
+func (m *ClassifyConnectionsResponse_Response) XXX_Size() int {
+	return xxx_messageInfo_ClassifyConnectionsResponse_Response.Size(m)
 }
-func (m *ClassifyConnectionResponse_Response) XXX_DiscardUnknown() {
-	xxx_messageInfo_ClassifyConnectionResponse_Response.DiscardUnknown(m)
+func (m *ClassifyConnectionsResponse_Response) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClassifyConnectionsResponse_Response.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ClassifyConnectionResponse_Response proto.InternalMessageInfo
+var xxx_messageInfo_ClassifyConnectionsResponse_Response proto.InternalMessageInfo
 
-func (m *ClassifyConnectionResponse_Response) GetId() string {
+func (m *ClassifyConnectionsResponse_Response) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-func (m *ClassifyConnectionResponse_Response) GetResults() []*ClassifyConnectionResponse_Response_Result {
+func (m *ClassifyConnectionsResponse_Response) GetResults() []*ClassifyConnectionsResponse_Response_Result {
 	if m != nil {
 		return m.Results
 	}
 	return nil
 }
 
-func (m *ClassifyConnectionResponse_Response) GetErr() string {
+func (m *ClassifyConnectionsResponse_Response) GetErr() string {
 	if m != nil {
 		return m.Err
 	}
 	return ""
 }
 
-type ClassifyConnectionResponse_Response_Result struct {
+type ClassifyConnectionsResponse_Response_Result struct {
 	Label                string   `protobuf:"bytes,1,opt,name=Label,json=label,proto3" json:"Label,omitempty"`
 	Prob                 float32  `protobuf:"fixed32,2,opt,name=prob,proto3" json:"prob,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -212,43 +165,43 @@ type ClassifyConnectionResponse_Response_Result struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ClassifyConnectionResponse_Response_Result) Reset() {
-	*m = ClassifyConnectionResponse_Response_Result{}
+func (m *ClassifyConnectionsResponse_Response_Result) Reset() {
+	*m = ClassifyConnectionsResponse_Response_Result{}
 }
-func (m *ClassifyConnectionResponse_Response_Result) String() string {
+func (m *ClassifyConnectionsResponse_Response_Result) String() string {
 	return proto.CompactTextString(m)
 }
-func (*ClassifyConnectionResponse_Response_Result) ProtoMessage() {}
-func (*ClassifyConnectionResponse_Response_Result) Descriptor() ([]byte, []int) {
+func (*ClassifyConnectionsResponse_Response_Result) ProtoMessage() {}
+func (*ClassifyConnectionsResponse_Response_Result) Descriptor() ([]byte, []int) {
 	return fileDescriptor_29fe88afc6e3cb8b, []int{1, 0, 0}
 }
 
-func (m *ClassifyConnectionResponse_Response_Result) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ClassifyConnectionResponse_Response_Result.Unmarshal(m, b)
+func (m *ClassifyConnectionsResponse_Response_Result) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ClassifyConnectionsResponse_Response_Result.Unmarshal(m, b)
 }
-func (m *ClassifyConnectionResponse_Response_Result) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ClassifyConnectionResponse_Response_Result.Marshal(b, m, deterministic)
+func (m *ClassifyConnectionsResponse_Response_Result) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ClassifyConnectionsResponse_Response_Result.Marshal(b, m, deterministic)
 }
-func (m *ClassifyConnectionResponse_Response_Result) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ClassifyConnectionResponse_Response_Result.Merge(m, src)
+func (m *ClassifyConnectionsResponse_Response_Result) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClassifyConnectionsResponse_Response_Result.Merge(m, src)
 }
-func (m *ClassifyConnectionResponse_Response_Result) XXX_Size() int {
-	return xxx_messageInfo_ClassifyConnectionResponse_Response_Result.Size(m)
+func (m *ClassifyConnectionsResponse_Response_Result) XXX_Size() int {
+	return xxx_messageInfo_ClassifyConnectionsResponse_Response_Result.Size(m)
 }
-func (m *ClassifyConnectionResponse_Response_Result) XXX_DiscardUnknown() {
-	xxx_messageInfo_ClassifyConnectionResponse_Response_Result.DiscardUnknown(m)
+func (m *ClassifyConnectionsResponse_Response_Result) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClassifyConnectionsResponse_Response_Result.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ClassifyConnectionResponse_Response_Result proto.InternalMessageInfo
+var xxx_messageInfo_ClassifyConnectionsResponse_Response_Result proto.InternalMessageInfo
 
-func (m *ClassifyConnectionResponse_Response_Result) GetLabel() string {
+func (m *ClassifyConnectionsResponse_Response_Result) GetLabel() string {
 	if m != nil {
 		return m.Label
 	}
 	return ""
 }
 
-func (m *ClassifyConnectionResponse_Response_Result) GetProb() float32 {
+func (m *ClassifyConnectionsResponse_Response_Result) GetProb() float32 {
 	if m != nil {
 		return m.Prob
 	}
@@ -256,39 +209,36 @@ func (m *ClassifyConnectionResponse_Response_Result) GetProb() float32 {
 }
 
 func init() {
-	proto.RegisterType((*ClassifyConnectionRequest)(nil), "luids.tlsutil.v1.ClassifyConnectionRequest")
-	proto.RegisterType((*ClassifyConnectionRequest_Request)(nil), "luids.tlsutil.v1.ClassifyConnectionRequest.Request")
-	proto.RegisterType((*ClassifyConnectionResponse)(nil), "luids.tlsutil.v1.ClassifyConnectionResponse")
-	proto.RegisterType((*ClassifyConnectionResponse_Response)(nil), "luids.tlsutil.v1.ClassifyConnectionResponse.Response")
-	proto.RegisterType((*ClassifyConnectionResponse_Response_Result)(nil), "luids.tlsutil.v1.ClassifyConnectionResponse.Response.Result")
+	proto.RegisterType((*ClassifyConnectionsRequest)(nil), "luids.tlsutil.v1.ClassifyConnectionsRequest")
+	proto.RegisterType((*ClassifyConnectionsResponse)(nil), "luids.tlsutil.v1.ClassifyConnectionsResponse")
+	proto.RegisterType((*ClassifyConnectionsResponse_Response)(nil), "luids.tlsutil.v1.ClassifyConnectionsResponse.Response")
+	proto.RegisterType((*ClassifyConnectionsResponse_Response_Result)(nil), "luids.tlsutil.v1.ClassifyConnectionsResponse.Response.Result")
 }
 
 func init() { proto.RegisterFile("classify.proto", fileDescriptor_29fe88afc6e3cb8b) }
 
 var fileDescriptor_29fe88afc6e3cb8b = []byte{
-	// 352 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x92, 0xcd, 0x4a, 0xfb, 0x40,
-	0x14, 0xc5, 0xff, 0x49, 0xff, 0xfd, 0xba, 0x85, 0x52, 0x06, 0x17, 0x31, 0xab, 0xd0, 0x55, 0xd1,
-	0x3a, 0xc1, 0x54, 0x77, 0x2e, 0xc4, 0xba, 0x14, 0x84, 0x11, 0x5c, 0xe8, 0x2a, 0x49, 0xc7, 0x76,
-	0x64, 0x92, 0x89, 0x33, 0x93, 0x82, 0xef, 0xe4, 0x03, 0xf8, 0x0a, 0xbe, 0x95, 0x64, 0xf2, 0x51,
-	0x29, 0x2d, 0x58, 0x57, 0x39, 0x49, 0xee, 0x3d, 0xbf, 0x7b, 0x66, 0x2e, 0x0c, 0x63, 0x1e, 0x2a,
-	0xc5, 0x5e, 0xde, 0x71, 0x26, 0x85, 0x16, 0x68, 0xc4, 0x73, 0xb6, 0x50, 0x58, 0x73, 0x95, 0x6b,
-	0xc6, 0xf1, 0xfa, 0xdc, 0xbd, 0x58, 0x32, 0xbd, 0xca, 0x23, 0x1c, 0x8b, 0xc4, 0x37, 0x3f, 0xcf,
-	0x98, 0xf0, 0xc3, 0x8c, 0xf9, 0x2a, 0x5e, 0xd1, 0x24, 0x54, 0x7e, 0x55, 0xeb, 0xc7, 0x22, 0x49,
-	0x44, 0x5a, 0xfa, 0x8c, 0xbf, 0x2c, 0x38, 0x9e, 0x57, 0xd6, 0x73, 0x91, 0xa6, 0x34, 0xd6, 0x4c,
-	0xa4, 0x84, 0xbe, 0xe5, 0x54, 0x69, 0x74, 0x0f, 0x3d, 0x59, 0x4a, 0xe5, 0x58, 0x5e, 0x6b, 0x32,
-	0x08, 0x66, 0x78, 0x1b, 0x8c, 0xf7, 0xb6, 0xe3, 0xea, 0x49, 0x1a, 0x13, 0xf7, 0x19, 0xba, 0xb5,
-	0xf7, 0x10, 0x6c, 0xb6, 0x70, 0x2c, 0xcf, 0x9a, 0xf4, 0x89, 0xcd, 0x16, 0xe8, 0x1a, 0x20, 0x6e,
-	0x1c, 0x1c, 0xdb, 0xb3, 0x26, 0x83, 0xc0, 0xdb, 0x41, 0x6b, 0x6a, 0x6e, 0x43, 0x1d, 0x92, 0x1f,
-	0x3d, 0xe3, 0x0f, 0x1b, 0xdc, 0x5d, 0xc3, 0xa8, 0x4c, 0xa4, 0x8a, 0xa2, 0x07, 0xe8, 0xcb, 0x4a,
-	0xd7, 0x69, 0x2e, 0x7f, 0x97, 0xa6, 0x6c, 0xc2, 0xb5, 0x20, 0x1b, 0x1f, 0xf7, 0xd3, 0x82, 0x5e,
-	0x43, 0xd8, 0x8e, 0xf4, 0x08, 0x5d, 0x49, 0x55, 0xce, 0xb5, 0x72, 0x6c, 0xc3, 0xbb, 0xfa, 0x13,
-	0xaf, 0x10, 0x39, 0xd7, 0xa4, 0x36, 0x43, 0x23, 0x68, 0x51, 0x29, 0x9d, 0x96, 0x01, 0x15, 0xd2,
-	0x0d, 0xa0, 0x53, 0x16, 0xa1, 0x23, 0x68, 0xdf, 0x85, 0x11, 0xe5, 0xd5, 0x18, 0x6d, 0x5e, 0xbc,
-	0x20, 0x04, 0xff, 0x33, 0x29, 0x22, 0x73, 0xac, 0x36, 0x31, 0x3a, 0x58, 0x43, 0xaf, 0x86, 0xa3,
-	0x57, 0x18, 0x6c, 0x06, 0x50, 0xe8, 0xf4, 0x80, 0x5b, 0x76, 0xa7, 0x87, 0x84, 0x1a, 0xff, 0xbb,
-	0x99, 0x3e, 0x9d, 0xec, 0x5b, 0x55, 0xb3, 0x93, 0x4b, 0x9a, 0xd6, 0xbb, 0x9a, 0x45, 0x51, 0xc7,
-	0x7c, 0x9b, 0x7d, 0x07, 0x00, 0x00, 0xff, 0xff, 0x6e, 0x56, 0x9f, 0x4e, 0x01, 0x03, 0x00, 0x00,
+	// 320 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x92, 0xc1, 0x4b, 0xc3, 0x30,
+	0x14, 0xc6, 0x6d, 0xe7, 0xe6, 0xf6, 0x06, 0x63, 0x04, 0x0f, 0xa5, 0x5e, 0xca, 0x4e, 0x43, 0xb6,
+	0x14, 0xa7, 0x78, 0xf3, 0xb2, 0x79, 0xf4, 0x54, 0x04, 0xc1, 0x93, 0x6d, 0x17, 0xb7, 0x40, 0x9a,
+	0xd4, 0xbc, 0x44, 0xf4, 0xaf, 0xf2, 0xec, 0x7f, 0x27, 0xcb, 0x5a, 0x3b, 0x64, 0x03, 0xf5, 0xf6,
+	0xe5, 0xe5, 0xbd, 0xef, 0xf7, 0x42, 0x3e, 0x18, 0xe4, 0x22, 0x45, 0xe4, 0xcf, 0xef, 0xb4, 0xd4,
+	0xca, 0x28, 0x32, 0x14, 0x96, 0x2f, 0x91, 0x1a, 0x81, 0xd6, 0x70, 0x41, 0x5f, 0x2f, 0xc2, 0xab,
+	0x15, 0x37, 0x6b, 0x9b, 0xd1, 0x5c, 0x15, 0xb1, 0xbb, 0x9c, 0x72, 0x15, 0xa7, 0x25, 0x8f, 0x31,
+	0x5f, 0xb3, 0x22, 0xc5, 0xb8, 0xea, 0x8d, 0x73, 0x55, 0x14, 0x4a, 0x6e, 0x7d, 0x46, 0x4f, 0x10,
+	0x2e, 0x2a, 0xe7, 0x85, 0x92, 0x92, 0xe5, 0x86, 0x2b, 0x89, 0x09, 0x7b, 0xb1, 0x0c, 0x0d, 0x99,
+	0x43, 0x3f, 0x6f, 0xaa, 0x81, 0x17, 0xb5, 0xc6, 0xfd, 0x59, 0x44, 0x7f, 0xb2, 0x69, 0x33, 0x7a,
+	0x9b, 0x9a, 0x34, 0xd9, 0x1d, 0x1a, 0x7d, 0xf8, 0x70, 0xb6, 0x17, 0x81, 0xa5, 0x92, 0xc8, 0xc8,
+	0x3d, 0xf4, 0x74, 0xa5, 0x6b, 0xc2, 0xf5, 0x1e, 0xc2, 0x61, 0x07, 0x5a, 0x8b, 0xa4, 0x31, 0x0a,
+	0x3f, 0x3d, 0xe8, 0x7e, 0x23, 0x06, 0xe0, 0xf3, 0x65, 0xe0, 0x45, 0xde, 0xb8, 0x97, 0xf8, 0x7c,
+	0x49, 0x1e, 0xe0, 0x44, 0x33, 0xb4, 0xc2, 0x60, 0xe0, 0x3b, 0xe0, 0xcd, 0xff, 0x80, 0x1b, 0x61,
+	0x85, 0x49, 0x6a, 0x37, 0x32, 0x84, 0x16, 0xd3, 0x3a, 0x68, 0x39, 0xd2, 0x46, 0x86, 0x33, 0xe8,
+	0x6c, 0x9b, 0xc8, 0x29, 0xb4, 0xef, 0xd2, 0x8c, 0x89, 0x6a, 0x8f, 0xb6, 0xd8, 0x1c, 0x08, 0x81,
+	0xe3, 0x52, 0xab, 0x2c, 0xf0, 0x23, 0x6f, 0xec, 0x27, 0x4e, 0xcf, 0xde, 0xa0, 0x5b, 0xd3, 0x89,
+	0x80, 0xfe, 0xce, 0x06, 0x64, 0xf2, 0xcb, 0x45, 0xdd, 0xf7, 0x85, 0xd3, 0x3f, 0x3d, 0x6b, 0x74,
+	0x34, 0x9f, 0x3c, 0x9e, 0x1f, 0x4a, 0x91, 0x8b, 0xcb, 0x8a, 0xc9, 0x3a, 0x46, 0x65, 0x96, 0x75,
+	0x5c, 0xed, 0xf2, 0x2b, 0x00, 0x00, 0xff, 0xff, 0xf1, 0xc8, 0xf1, 0xd8, 0x9c, 0x02, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -303,7 +253,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type ClassifyClient interface {
-	Connections(ctx context.Context, in *ClassifyConnectionRequest, opts ...grpc.CallOption) (*ClassifyConnectionResponse, error)
+	Connections(ctx context.Context, in *ClassifyConnectionsRequest, opts ...grpc.CallOption) (*ClassifyConnectionsResponse, error)
 }
 
 type classifyClient struct {
@@ -314,8 +264,8 @@ func NewClassifyClient(cc *grpc.ClientConn) ClassifyClient {
 	return &classifyClient{cc}
 }
 
-func (c *classifyClient) Connections(ctx context.Context, in *ClassifyConnectionRequest, opts ...grpc.CallOption) (*ClassifyConnectionResponse, error) {
-	out := new(ClassifyConnectionResponse)
+func (c *classifyClient) Connections(ctx context.Context, in *ClassifyConnectionsRequest, opts ...grpc.CallOption) (*ClassifyConnectionsResponse, error) {
+	out := new(ClassifyConnectionsResponse)
 	err := c.cc.Invoke(ctx, "/luids.tlsutil.v1.Classify/Connections", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -325,14 +275,14 @@ func (c *classifyClient) Connections(ctx context.Context, in *ClassifyConnection
 
 // ClassifyServer is the server API for Classify service.
 type ClassifyServer interface {
-	Connections(context.Context, *ClassifyConnectionRequest) (*ClassifyConnectionResponse, error)
+	Connections(context.Context, *ClassifyConnectionsRequest) (*ClassifyConnectionsResponse, error)
 }
 
 // UnimplementedClassifyServer can be embedded to have forward compatible implementations.
 type UnimplementedClassifyServer struct {
 }
 
-func (*UnimplementedClassifyServer) Connections(ctx context.Context, req *ClassifyConnectionRequest) (*ClassifyConnectionResponse, error) {
+func (*UnimplementedClassifyServer) Connections(ctx context.Context, req *ClassifyConnectionsRequest) (*ClassifyConnectionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Connections not implemented")
 }
 
@@ -341,7 +291,7 @@ func RegisterClassifyServer(s *grpc.Server, srv ClassifyServer) {
 }
 
 func _Classify_Connections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ClassifyConnectionRequest)
+	in := new(ClassifyConnectionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -353,7 +303,7 @@ func _Classify_Connections_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: "/luids.tlsutil.v1.Classify/Connections",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClassifyServer).Connections(ctx, req.(*ClassifyConnectionRequest))
+		return srv.(ClassifyServer).Connections(ctx, req.(*ClassifyConnectionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
