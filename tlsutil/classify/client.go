@@ -13,7 +13,6 @@ import (
 
 	pb "github.com/luids-io/api/protogen/tlsutilpb"
 	"github.com/luids-io/api/tlsutil/encoding"
-	"github.com/luids-io/core/brain/classify"
 	"github.com/luids-io/core/tlsutil"
 )
 
@@ -82,7 +81,7 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 }
 
 // ClassifyConnections implements tlsutil.Classifier
-func (c *Client) ClassifyConnections(ctx context.Context, requests []*tlsutil.ConnectionData) ([]classify.Response, error) {
+func (c *Client) ClassifyConnections(ctx context.Context, requests []*tlsutil.ConnectionData) ([]tlsutil.ClassifyResponse, error) {
 	if !c.started {
 		return nil, errors.New("client closed")
 	}
@@ -100,16 +99,16 @@ func (c *Client) ClassifyConnections(ctx context.Context, requests []*tlsutil.Co
 		return nil, errors.New("requests len and responses len missmatch")
 	}
 	// reencode responses
-	responses := make([]classify.Response, 0, len(pbres.Responses))
+	responses := make([]tlsutil.ClassifyResponse, 0, len(pbres.Responses))
 	for _, r := range pbres.Responses {
-		resp := classify.Response{}
-		resp.ID = r.GetId()
+		resp := tlsutil.ClassifyResponse{}
+		//resp.ID
 		if r.GetErr() != "" {
 			resp.Err = errors.New(r.GetErr())
 		} else {
-			resp.Results = make([]classify.Result, 0, len(r.GetResults()))
+			resp.Results = make([]tlsutil.ClassifyResult, 0, len(r.GetResults()))
 			for _, result := range r.GetResults() {
-				resp.Results = append(resp.Results, classify.Result{
+				resp.Results = append(resp.Results, tlsutil.ClassifyResult{
 					Label: result.GetLabel(),
 					Prob:  result.GetProb(),
 				})

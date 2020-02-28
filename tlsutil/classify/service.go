@@ -78,7 +78,7 @@ func (s *Service) Connections(ctx context.Context, in *pb.ClassifyConnectionsReq
 	// create response
 	retResponses := make([]*pb.ClassifyConnectionsResponse_Response, 0, len(responses))
 	for _, r := range responses {
-		resp := &pb.ClassifyConnectionsResponse_Response{Id: r.ID}
+		resp := &pb.ClassifyConnectionsResponse_Response{}
 		retResponses = append(retResponses, resp)
 		if r.Err != nil {
 			resp.Err = r.Err.Error()

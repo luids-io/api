@@ -17,13 +17,12 @@ message ClassifyConnectionsRequest {
 
 message ClassifyConnectionsResponse {
     message Response {
-         string id = 1;
          message Result {
              string Label = 1;
              float prob = 2;
          }
-         repeated Result results = 2;
-         string err = 3;
+         repeated Result results = 1;
+         string err = 2;
     }
     repeated Response responses = 1;
 }
