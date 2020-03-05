@@ -101,14 +101,16 @@ func (s *Service) Ping(ctx context.Context, in *empty.Empty) (*empty.Empty, erro
 //mapping errors
 func (s *Service) mapError(err error) error {
 	switch err {
-	case xlist.ErrBadResourceFormat:
+	case xlist.ErrBadRequest:
 		return status.Error(codes.InvalidArgument, err.Error())
-	case xlist.ErrResourceNotSupported:
+	case xlist.ErrReadOnlyMode:
+		return status.Error(codes.PermissionDenied, err.Error())
+	case xlist.ErrNotImplemented:
 		return status.Error(codes.Unimplemented, err.Error())
-	case xlist.ErrListNotAvailable:
+	case xlist.ErrNotAvailable:
 		return status.Error(codes.Unavailable, err.Error())
 	default:
-		rpcerr := status.Error(codes.Unavailable, xlist.ErrListNotAvailable.Error())
+		rpcerr := status.Error(codes.Unavailable, xlist.ErrNotAvailable.Error())
 		if s.opts.disclosureErr {
 			rpcerr = status.Error(codes.Unavailable, err.Error())
 		}

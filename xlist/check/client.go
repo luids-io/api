@@ -132,18 +132,18 @@ func NewClient(conn *grpc.ClientConn, resources []xlist.Resource, opt ...ClientO
 // Check implements xlist.Checker interface
 func (c *Client) Check(ctx context.Context, name string, resource xlist.Resource) (xlist.Response, error) {
 	if !c.started {
-		return xlist.Response{}, xlist.ErrListNotAvailable
+		return xlist.Response{}, xlist.ErrNotAvailable
 	}
 	if c.opts.debugreq {
 		c.logger.Debugf("check(%s,%v)", name, resource)
 	}
 	if !c.synced {
 		if err := c.sync(ctx); err != nil {
-			return xlist.Response{}, xlist.ErrListNotAvailable
+			return xlist.Response{}, xlist.ErrNotAvailable
 		}
 	}
 	if !c.checks(resource) {
-		return xlist.Response{}, xlist.ErrResourceNotSupported
+		return xlist.Response{}, xlist.ErrNotImplemented
 	}
 	name, ctx, err := xlist.DoValidation(ctx, name, resource, c.opts.forceValidation)
 	if err != nil {
@@ -241,12 +241,14 @@ func (c *Client) mapError(err error) error {
 	retErr := errors.New(st.Message())
 	switch st.Code() {
 	case codes.InvalidArgument:
-		retErr = xlist.ErrBadResourceFormat
+		retErr = xlist.ErrBadRequest
+	case codes.PermissionDenied:
+		retErr = xlist.ErrReadOnlyMode
 	case codes.Unimplemented:
-		retErr = xlist.ErrResourceNotSupported
+		retErr = xlist.ErrNotImplemented
 	case codes.Unavailable:
-		if st.Message() == xlist.ErrListNotAvailable.Error() {
-			retErr = xlist.ErrListNotAvailable
+		if st.Message() == xlist.ErrNotAvailable.Error() {
+			retErr = xlist.ErrNotAvailable
 		}
 	}
 	return retErr
