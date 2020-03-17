@@ -5,6 +5,7 @@ package archive
 import (
 	"context"
 	"net"
+	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc"
@@ -70,6 +71,7 @@ func (s *Service) SaveResolv(ctx context.Context, req *pb.SaveResolvRequest) (*p
 func parseRequest(req *pb.SaveResolvRequest) (dnsutil.ResolvData, error) {
 	i := dnsutil.ResolvData{}
 	i.Timestamp, _ = ptypes.Timestamp(req.GetTs())
+	i.Duration = time.Duration(req.GetDuration())
 	i.Server = net.ParseIP(req.GetServerIp())
 	if i.Server == nil {
 		return i, dnsutil.ErrBadRequestFormat
@@ -78,20 +80,20 @@ func parseRequest(req *pb.SaveResolvRequest) (dnsutil.ResolvData, error) {
 	if i.Client == nil {
 		return i, dnsutil.ErrBadRequestFormat
 	}
-	if len(req.GetResolvedIps()) == 0 {
-		return i, dnsutil.ErrBadRequestFormat
-	}
-	i.Resolved = make([]net.IP, 0, len(req.GetResolvedIps()))
-	for _, r := range req.GetResolvedIps() {
-		ip := net.ParseIP(r)
-		if ip == nil {
-			return i, dnsutil.ErrBadRequestFormat
-		}
-		i.Resolved = append(i.Resolved, ip)
-	}
+	i.QID = uint16(req.GetQid())
 	i.Name = req.GetName()
-	if i.Name == "" {
-		return i, dnsutil.ErrBadRequestFormat
+	i.CheckingDisabled = req.GetCheckingDisabled()
+	i.ReturnCode = int(req.GetReturnCode())
+	i.AuthenticatedData = req.GetAuthenticatedData()
+	if len(req.GetResolvedIps()) > 0 {
+		i.Resolved = make([]net.IP, 0, len(req.GetResolvedIps()))
+		for _, r := range req.GetResolvedIps() {
+			ip := net.ParseIP(r)
+			if ip == nil {
+				return i, dnsutil.ErrBadRequestFormat
+			}
+			i.Resolved = append(i.Resolved, ip)
+		}
 	}
 	return i, nil
 }

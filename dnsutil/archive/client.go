@@ -84,16 +84,22 @@ func (c *Client) SaveResolv(ctx context.Context, data dnsutil.ResolvData) (strin
 
 func (c *Client) doSave(ctx context.Context, data dnsutil.ResolvData) (string, error) {
 	tstamp, _ := ptypes.TimestampProto(data.Timestamp)
-	rr := make([]string, 0, len(data.Resolved))
-	for _, r := range data.Resolved {
-		rr = append(rr, r.String())
-	}
 	req := &pb.SaveResolvRequest{
-		Ts:          tstamp,
-		ServerIp:    data.Server.String(),
-		ClientIp:    data.Client.String(),
-		Name:        data.Name,
-		ResolvedIps: rr,
+		Ts:                tstamp,
+		Duration:          int64(data.Duration),
+		ServerIp:          data.Server.String(),
+		ClientIp:          data.Client.String(),
+		Qid:               int32(data.QID),
+		Name:              data.Name,
+		CheckingDisabled:  data.CheckingDisabled,
+		ReturnCode:        int32(data.ReturnCode),
+		AuthenticatedData: data.AuthenticatedData,
+	}
+	if len(data.Resolved) > 0 {
+		req.ResolvedIps = make([]string, 0, len(data.Resolved))
+		for _, r := range data.Resolved {
+			req.ResolvedIps = append(req.ResolvedIps, r.String())
+		}
 	}
 	resp, err := c.client.SaveResolv(ctx, req)
 	if err != nil {
