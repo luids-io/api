@@ -14,18 +14,22 @@ import (
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
-	pb "github.com/luids-io/api/protogen/capturepb"
-	"github.com/luids-io/core/capture"
+	pb "github.com/luids-io/api/protogen/packetprocpb"
+	"github.com/luids-io/core/packetproc"
 )
 
 // Service implements a service wrapper for the grpc api
 type Service struct {
-	processor capture.Processor
+	pcktsvc packetproc.Service
+	ethproc packetproc.Processor
 }
 
 // NewService returns a new Service for the grpc api
-func NewService(p capture.Processor) *Service {
-	return &Service{processor: p}
+func NewService(p packetproc.Service, ethproc packetproc.Processor) *Service {
+	return &Service{
+		pcktsvc: p,
+		ethproc: ethproc,
+	}
 }
 
 // RegisterServer registers a service in the grpc server
@@ -57,15 +61,14 @@ func (s *Service) sendPackets(stream pcktServerStream, linkType layers.LinkType)
 		err:    make(chan error),
 		stream: stream,
 	}
-	source := gopacket.NewPacketSource(psource, linkType)
-	err := s.processor.Register(name, source)
+	err := s.pcktsvc.Register(name, psource, s.ethproc)
 	if err != nil {
-		return status.Errorf(codes.Internal, "Internal error registering")
+		return status.Errorf(codes.Internal, "Internal error registering: %v", err)
 	}
 	//waits for close or error
 	err = <-psource.err
 	//clean
-	s.processor.Unregister(name)
+	s.pcktsvc.Unregister(name)
 	close(psource.err)
 	if err == io.EOF {
 		return nil

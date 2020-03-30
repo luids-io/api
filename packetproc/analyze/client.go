@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 
-	pb "github.com/luids-io/api/protogen/capturepb"
+	pb "github.com/luids-io/api/protogen/packetprocpb"
 )
 
 // Client is the main struct for grpc client

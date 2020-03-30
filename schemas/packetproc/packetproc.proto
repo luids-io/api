@@ -1,0 +1,25 @@
+// Copyright 2019 Luis Guillén Civera <luisguillenc@gmail.com>. View LICENSE.
+
+syntax = "proto3";
+
+import "github.com/golang/protobuf/ptypes/empty/empty.proto";
+import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
+
+package luids.packetproc.v1;
+option go_package = "github.com/luids-io/api/protogen/packetprocpb";
+
+service Analyze {
+    rpc SendEtherPackets (stream SendPacketRequest) returns (google.protobuf.Empty) {}
+}
+
+message SendPacketRequest {
+    PacketMetadata metadata = 1;
+    bytes data = 2;
+}
+
+message PacketMetadata {
+    google.protobuf.Timestamp timestamp = 1;
+    int32 capture_length  = 2;
+    int32 length = 3;
+    int32 interface_index = 4;
+}

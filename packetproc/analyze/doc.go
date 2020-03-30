@@ -6,7 +6,7 @@ import "fmt"
 
 // Constants for api description
 const (
-	APIName    = "luids.capture"
+	APIName    = "luids.packetproc"
 	APIVersion = "v1"
 	APIService = "Analyze"
 )

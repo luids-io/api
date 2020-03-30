@@ -10,7 +10,7 @@ import (
 	"github.com/google/gopacket/layers"
 	"google.golang.org/grpc"
 
-	pb "github.com/luids-io/api/protogen/capturepb"
+	pb "github.com/luids-io/api/protogen/packetprocpb"
 )
 
 type pcktClientStream interface {
