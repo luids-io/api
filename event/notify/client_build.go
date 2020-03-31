@@ -4,11 +4,11 @@ package notify
 
 import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/luisguillenc/grpctls"
-	"github.com/luisguillenc/yalogi"
 	"google.golang.org/grpc"
 
 	"github.com/luids-io/core/apiservice"
+	"github.com/luids-io/core/utils/grpctls"
+	"github.com/luids-io/core/utils/yalogi"
 )
 
 // ClientBuilder returns builder function for the apiservice

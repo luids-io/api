@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	"github.com/luisguillenc/yalogi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 
 	pb "github.com/luids-io/api/protogen/dnsutilpb"
 	"github.com/luids-io/core/dnsutil"
+	"github.com/luids-io/core/utils/yalogi"
 	"github.com/luids-io/core/xlist"
 )
 

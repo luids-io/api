@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/luisguillenc/yalogi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
@@ -16,6 +15,7 @@ import (
 
 	pb "github.com/luids-io/api/protogen/dnsutilpb"
 	"github.com/luids-io/core/dnsutil"
+	"github.com/luids-io/core/utils/yalogi"
 )
 
 // Client implements a grpc client that implements dnsutil.ResolvCollector

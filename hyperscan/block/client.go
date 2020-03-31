@@ -7,12 +7,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luisguillenc/yalogi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/status"
 
 	pb "github.com/luids-io/api/protogen/hspb"
+	"github.com/luids-io/core/utils/yalogi"
 )
 
 // Client provides a grpc client that implements hyperscan.BlockScanner interface.

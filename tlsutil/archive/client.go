@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luisguillenc/yalogi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 
 	pb "github.com/luids-io/api/protogen/tlsutilpb"
 	"github.com/luids-io/core/tlsutil"
+	"github.com/luids-io/core/utils/yalogi"
 )
 
 // Client is the main struct for grpc client

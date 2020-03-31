@@ -7,13 +7,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luisguillenc/yalogi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 
 	"github.com/luids-io/api/event/encoding"
 	pb "github.com/luids-io/api/protogen/eventpb"
 	"github.com/luids-io/core/event"
+	"github.com/luids-io/core/utils/yalogi"
 )
 
 // Client is the main struct for grpc client

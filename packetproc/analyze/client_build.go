@@ -4,8 +4,8 @@ package analyze
 
 import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/luisguillenc/grpctls"
-	"github.com/luisguillenc/yalogi"
+	"github.com/luids-io/core/utils/grpctls"
+	"github.com/luids-io/core/utils/yalogi"
 	"google.golang.org/grpc"
 
 	"github.com/luids-io/core/apiservice"

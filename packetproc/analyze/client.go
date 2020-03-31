@@ -10,7 +10,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-	"github.com/luisguillenc/yalogi"
+	"github.com/luids-io/core/utils/yalogi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 
