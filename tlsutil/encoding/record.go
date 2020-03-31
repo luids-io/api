@@ -2,17 +2,17 @@ package encoding
 
 import (
 	"github.com/golang/protobuf/ptypes"
-	"github.com/luisguillenc/tlslayer"
 
 	pb "github.com/luids-io/api/protogen/tlsutilpb"
 	"github.com/luids-io/core/tlsutil"
+	"github.com/luids-io/core/tlsutil/layer"
 )
 
 // RecordData convert to model RecordData
 func RecordData(src *pb.RecordData) *tlsutil.RecordData {
 	dst := &tlsutil.RecordData{}
 	dst.StreamID = src.GetStreamId()
-	dst.Type = tlslayer.ContentType(src.GetType())
+	dst.Type = layer.ContentType(src.GetType())
 	dst.Len = uint16(src.GetLen())
 	dst.Timestamp, _ = ptypes.Timestamp(src.GetTimestamp())
 	dst.Ciphered = src.GetCiphered()
