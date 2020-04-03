@@ -10,11 +10,11 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-	"github.com/luids-io/core/utils/yalogi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 
 	pb "github.com/luids-io/api/protogen/packetprocpb"
+	"github.com/luids-io/core/utils/yalogi"
 )
 
 // Client is the main struct for grpc client
@@ -83,11 +83,11 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 }
 
 // SendEtherPacket implements capture.Analyzer interface
-func (c *Client) SendEtherPacket(packet gopacket.Packet) error {
+func (c *Client) SendEtherPacket(data []byte, md *gopacket.PacketMetadata) error {
 	if !c.started {
 		return errors.New("client closed")
 	}
-	req, err := getPacketRequest(packet, layers.LayerTypeEthernet)
+	req, err := getPacketRequest(data, md, layers.LayerTypeEthernet)
 	if err != nil {
 		return err
 	}
@@ -96,11 +96,11 @@ func (c *Client) SendEtherPacket(packet gopacket.Packet) error {
 }
 
 // SendIP4Packet implements capture.Analyzer interface
-func (c *Client) SendIP4Packet(packet gopacket.Packet) error {
+func (c *Client) SendIP4Packet(data []byte, md *gopacket.PacketMetadata) error {
 	if !c.started {
 		return errors.New("client closed")
 	}
-	req, err := getPacketRequest(packet, layers.LayerTypeIPv4)
+	req, err := getPacketRequest(data, md, layers.LayerTypeIPv4)
 	if err != nil {
 		return err
 	}
@@ -109,11 +109,11 @@ func (c *Client) SendIP4Packet(packet gopacket.Packet) error {
 }
 
 // SendIP6Packet implements capture.Analyzer interface
-func (c *Client) SendIP6Packet(packet gopacket.Packet) error {
+func (c *Client) SendIP6Packet(data []byte, md *gopacket.PacketMetadata) error {
 	if !c.started {
 		return errors.New("client closed")
 	}
-	req, err := getPacketRequest(packet, layers.LayerTypeIPv6)
+	req, err := getPacketRequest(data, md, layers.LayerTypeIPv6)
 	if err != nil {
 		return err
 	}
@@ -121,18 +121,12 @@ func (c *Client) SendIP6Packet(packet gopacket.Packet) error {
 	return nil
 }
 
-func getPacketRequest(packet gopacket.Packet, layer gopacket.LayerType) (*pb.SendPacketRequest, error) {
-	ldata := packet.Layer(layer)
-	if ldata == nil {
-		return nil, errors.New("layer missmatch")
-	}
-	//create request
-	md := packet.Metadata()
+func getPacketRequest(data []byte, md *gopacket.PacketMetadata, layer gopacket.LayerType) (*pb.SendPacketRequest, error) {
 	req := &pb.SendPacketRequest{}
 	req.Metadata = &pb.PacketMetadata{}
 	req.Metadata.Timestamp, _ = ptypes.TimestampProto(md.Timestamp)
 	req.Metadata.InterfaceIndex = int32(md.InterfaceIndex)
-	req.Data = append(ldata.LayerContents(), ldata.LayerPayload()...)
+	req.Data = data
 	return req, nil
 }
 
@@ -144,15 +138,15 @@ func (c *Client) start() {
 
 	//init rpc managers
 	c.wg.Add(1)
-	c.rpcEth = newRPCClient(c.client, layers.LinkTypeEthernet, c.opts.buffSize)
+	c.rpcEth = newRPCClient(c.client, layers.LayerTypeEthernet, c.opts.buffSize)
 	go c.rpcEth.run(&c.wg, c.close, c.errs)
 
 	c.wg.Add(1)
-	c.rpcIP4 = newRPCClient(c.client, layers.LinkTypeIPv4, c.opts.buffSize)
+	c.rpcIP4 = newRPCClient(c.client, layers.LayerTypeIPv4, c.opts.buffSize)
 	go c.rpcIP4.run(&c.wg, c.close, c.errs)
 
 	c.wg.Add(1)
-	c.rpcIP6 = newRPCClient(c.client, layers.LinkTypeIPv6, c.opts.buffSize)
+	c.rpcIP6 = newRPCClient(c.client, layers.LayerTypeIPv6, c.opts.buffSize)
 	go c.rpcIP6.run(&c.wg, c.close, c.errs)
 
 	c.started = true

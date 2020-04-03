@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"google.golang.org/grpc"
 
@@ -22,15 +23,15 @@ type rpcClient struct {
 	client    pb.AnalyzeClient
 	stream    pcktClientStream
 	dataCh    chan *pb.SendPacketRequest
-	linkType  layers.LinkType
+	layer     gopacket.LayerType
 	connected bool
 }
 
-func newRPCClient(c pb.AnalyzeClient, l layers.LinkType, buffSize int) *rpcClient {
+func newRPCClient(c pb.AnalyzeClient, l gopacket.LayerType, buffSize int) *rpcClient {
 	r := &rpcClient{
-		client:   c,
-		linkType: l,
-		dataCh:   make(chan *pb.SendPacketRequest, buffSize),
+		client: c,
+		layer:  l,
+		dataCh: make(chan *pb.SendPacketRequest, buffSize),
 	}
 	return r
 }
@@ -85,11 +86,11 @@ func (r *rpcClient) save(req *pb.SendPacketRequest) error {
 
 func (r *rpcClient) connect() error {
 	var err error
-	switch r.linkType {
-	case layers.LinkTypeEthernet:
+	switch r.layer {
+	case layers.LayerTypeEthernet:
 		r.stream, err = r.client.SendEtherPackets(context.Background())
 	default:
-		err = fmt.Errorf("unexpected linktype %v", r.linkType)
+		err = fmt.Errorf("unexpected linktype %v", r.layer)
 	}
 	if err != nil {
 		return err
