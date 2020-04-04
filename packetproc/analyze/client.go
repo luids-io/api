@@ -95,8 +95,8 @@ func (c *Client) SendEtherPacket(data []byte, md *gopacket.PacketMetadata) error
 	return nil
 }
 
-// SendIP4Packet implements capture.Analyzer interface
-func (c *Client) SendIP4Packet(data []byte, md *gopacket.PacketMetadata) error {
+// SendIPv4Packet implements capture.Analyzer interface
+func (c *Client) SendIPv4Packet(data []byte, md *gopacket.PacketMetadata) error {
 	if !c.started {
 		return errors.New("client closed")
 	}
@@ -108,8 +108,8 @@ func (c *Client) SendIP4Packet(data []byte, md *gopacket.PacketMetadata) error {
 	return nil
 }
 
-// SendIP6Packet implements capture.Analyzer interface
-func (c *Client) SendIP6Packet(data []byte, md *gopacket.PacketMetadata) error {
+// SendIPv6Packet implements capture.Analyzer interface
+func (c *Client) SendIPv6Packet(data []byte, md *gopacket.PacketMetadata) error {
 	if !c.started {
 		return errors.New("client closed")
 	}

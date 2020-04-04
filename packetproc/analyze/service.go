@@ -22,13 +22,17 @@ import (
 type Service struct {
 	pcktsvc packetproc.Service
 	ethproc packetproc.Processor
+	ip4proc packetproc.Processor
+	ip6proc packetproc.Processor
 }
 
 // NewService returns a new Service for the grpc api
-func NewService(p packetproc.Service, ethproc packetproc.Processor) *Service {
+func NewService(p packetproc.Service, ethproc, ip4proc, ip6proc packetproc.Processor) *Service {
 	return &Service{
 		pcktsvc: p,
 		ethproc: ethproc,
+		ip4proc: ip4proc,
+		ip6proc: ip6proc,
 	}
 }
 
@@ -42,6 +46,16 @@ func (s *Service) SendEtherPackets(stream pb.Analyze_SendEtherPacketsServer) err
 	return s.sendPackets(stream, layers.LinkTypeEthernet)
 }
 
+// SendIPv4Packets manage requests
+func (s *Service) SendIPv4Packets(stream pb.Analyze_SendIPv4PacketsServer) error {
+	return s.sendPackets(stream, layers.LinkTypeIPv4)
+}
+
+// SendIPv6Packets manage requests
+func (s *Service) SendIPv6Packets(stream pb.Analyze_SendIPv6PacketsServer) error {
+	return s.sendPackets(stream, layers.LinkTypeIPv6)
+}
+
 // sendPackets manage requests
 func (s *Service) sendPackets(stream pcktServerStream, linkType layers.LinkType) error {
 	ctx := stream.Context()
@@ -51,9 +65,17 @@ func (s *Service) sendPackets(stream pcktServerStream, linkType layers.LinkType)
 	}
 	// creates packet source
 	name := p.Addr.String()
+	var proc packetproc.Processor
 	switch linkType {
 	case layers.LinkTypeEthernet:
 		name = fmt.Sprintf("%s-eth", name)
+		proc = s.ethproc
+	case layers.LinkTypeIPv4:
+		name = fmt.Sprintf("%s-ip4", name)
+		proc = s.ip4proc
+	case layers.LinkTypeIPv6:
+		name = fmt.Sprintf("%s-ip6", name)
+		proc = s.ip6proc
 	default:
 		return status.Error(codes.Internal, "invalid layer")
 	}
@@ -61,7 +83,7 @@ func (s *Service) sendPackets(stream pcktServerStream, linkType layers.LinkType)
 		err:    make(chan error),
 		stream: stream,
 	}
-	err := s.pcktsvc.Register(name, psource, s.ethproc)
+	err := s.pcktsvc.Register(name, psource, proc)
 	if err != nil {
 		return status.Errorf(codes.Internal, "Internal error registering: %v", err)
 	}

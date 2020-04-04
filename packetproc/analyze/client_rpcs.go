@@ -89,6 +89,10 @@ func (r *rpcClient) connect() error {
 	switch r.layer {
 	case layers.LayerTypeEthernet:
 		r.stream, err = r.client.SendEtherPackets(context.Background())
+	case layers.LayerTypeIPv4:
+		r.stream, err = r.client.SendIPv4Packets(context.Background())
+	case layers.LayerTypeIPv6:
+		r.stream, err = r.client.SendIPv6Packets(context.Background())
 	default:
 		err = fmt.Errorf("unexpected linktype %v", r.layer)
 	}

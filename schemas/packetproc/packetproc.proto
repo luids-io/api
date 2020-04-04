@@ -10,6 +10,8 @@ option go_package = "github.com/luids-io/api/protogen/packetprocpb";
 
 service Analyze {
     rpc SendEtherPackets (stream SendPacketRequest) returns (google.protobuf.Empty) {}
+    rpc SendIPv4Packets (stream SendPacketRequest) returns (google.protobuf.Empty) {}
+    rpc SendIPv6Packets (stream SendPacketRequest) returns (google.protobuf.Empty) {}
 }
 
 message SendPacketRequest {
