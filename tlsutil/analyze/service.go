@@ -7,6 +7,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
 	pb "github.com/luids-io/api/protogen/tlsutilpb"
@@ -31,7 +32,17 @@ func RegisterServer(server *grpc.Server, service *Service) {
 
 // SendMessages manage messages
 func (s *Service) SendMessages(stream pb.Analyze_SendMessagesServer) error {
-	analyzer := s.factory.NewAnalyzer()
+	ctx := stream.Context()
+	p, ok := peer.FromContext(ctx)
+	if !ok {
+		return status.Errorf(codes.Internal, "Internal error getting peer")
+	}
+	// creates packet source
+	name := p.Addr.String()
+	analyzer, err := s.factory.NewAnalyzer(name)
+	if err != nil {
+		return status.Errorf(codes.Internal, "Internal error getting analyzer")
+	}
 	defer analyzer.Close()
 
 	for {
