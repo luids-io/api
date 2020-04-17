@@ -76,26 +76,22 @@ func (c *Client) NotifyEvent(ctx context.Context, e event.Event) (string, error)
 	if !c.started {
 		return "", errors.New("client closed")
 	}
-	return c.doNotify(ctx, e)
-}
-
-func (c *Client) doNotify(ctx context.Context, e event.Event) (string, error) {
 	//create request
-	req, err := eventToRequest(e)
+	req, err := encoding.NotifyEventRequest(e)
 	if err != nil {
 		return "", fmt.Errorf("serializing event: %v", err)
 	}
 	//notify request
-	resp, err := c.client.Notify(ctx, req)
+	resp, err := c.client.NotifyEvent(ctx, req)
 	if err != nil {
 		return "", c.mapError(err)
 	}
 	//process response
-	requestID := resp.GetRequestID()
-	if requestID == "" {
-		return "", fmt.Errorf("processing response: request_id empty")
+	eventID := resp.GetEventID()
+	if eventID == "" {
+		return "", fmt.Errorf("processing response: event_id empty")
 	}
-	return requestID, nil
+	return eventID, nil
 }
 
 //mapping errors routine
@@ -129,16 +125,6 @@ func (c *Client) Ping() error {
 		return fmt.Errorf("connection state: %v", st)
 	}
 	return nil
-}
-
-func eventToRequest(e event.Event) (*pb.NotifyRequest, error) {
-	pbevent, err := encoding.EventPB(e)
-	if err != nil {
-		return nil, err
-	}
-	req := &pb.NotifyRequest{}
-	req.Event = pbevent
-	return req, nil
 }
 
 //API returns API service name implemented

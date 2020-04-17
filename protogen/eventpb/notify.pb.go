@@ -7,6 +7,7 @@ import (
 	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -24,106 +25,156 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type NotifyRequest struct {
-	Event                *Event   `protobuf:"bytes,1,opt,name=event,proto3" json:"event,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+type NotifyEventRequest struct {
+	Type                 EventType            `protobuf:"varint,2,opt,name=type,proto3,enum=luids.event.v1.EventType" json:"type,omitempty"`
+	Code                 int32                `protobuf:"varint,3,opt,name=code,proto3" json:"code,omitempty"`
+	Level                EventLevel           `protobuf:"varint,4,opt,name=level,proto3,enum=luids.event.v1.EventLevel" json:"level,omitempty"`
+	CreatedTs            *timestamp.Timestamp `protobuf:"bytes,5,opt,name=created_ts,json=createdTs,proto3" json:"created_ts,omitempty"`
+	Source               *EventSource         `protobuf:"bytes,6,opt,name=source,proto3" json:"source,omitempty"`
+	Data                 *EventData           `protobuf:"bytes,8,opt,name=data,proto3" json:"data,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *NotifyRequest) Reset()         { *m = NotifyRequest{} }
-func (m *NotifyRequest) String() string { return proto.CompactTextString(m) }
-func (*NotifyRequest) ProtoMessage()    {}
-func (*NotifyRequest) Descriptor() ([]byte, []int) {
+func (m *NotifyEventRequest) Reset()         { *m = NotifyEventRequest{} }
+func (m *NotifyEventRequest) String() string { return proto.CompactTextString(m) }
+func (*NotifyEventRequest) ProtoMessage()    {}
+func (*NotifyEventRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aba76cc4ebe272d4, []int{0}
 }
 
-func (m *NotifyRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_NotifyRequest.Unmarshal(m, b)
+func (m *NotifyEventRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NotifyEventRequest.Unmarshal(m, b)
 }
-func (m *NotifyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_NotifyRequest.Marshal(b, m, deterministic)
+func (m *NotifyEventRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NotifyEventRequest.Marshal(b, m, deterministic)
 }
-func (m *NotifyRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_NotifyRequest.Merge(m, src)
+func (m *NotifyEventRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NotifyEventRequest.Merge(m, src)
 }
-func (m *NotifyRequest) XXX_Size() int {
-	return xxx_messageInfo_NotifyRequest.Size(m)
+func (m *NotifyEventRequest) XXX_Size() int {
+	return xxx_messageInfo_NotifyEventRequest.Size(m)
 }
-func (m *NotifyRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_NotifyRequest.DiscardUnknown(m)
+func (m *NotifyEventRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_NotifyEventRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_NotifyRequest proto.InternalMessageInfo
+var xxx_messageInfo_NotifyEventRequest proto.InternalMessageInfo
 
-func (m *NotifyRequest) GetEvent() *Event {
+func (m *NotifyEventRequest) GetType() EventType {
 	if m != nil {
-		return m.Event
+		return m.Type
+	}
+	return EventType_SECURITY
+}
+
+func (m *NotifyEventRequest) GetCode() int32 {
+	if m != nil {
+		return m.Code
+	}
+	return 0
+}
+
+func (m *NotifyEventRequest) GetLevel() EventLevel {
+	if m != nil {
+		return m.Level
+	}
+	return EventLevel_INFO
+}
+
+func (m *NotifyEventRequest) GetCreatedTs() *timestamp.Timestamp {
+	if m != nil {
+		return m.CreatedTs
 	}
 	return nil
 }
 
-type NotifyResponse struct {
-	RequestID            string   `protobuf:"bytes,1,opt,name=requestID,proto3" json:"requestID,omitempty"`
+func (m *NotifyEventRequest) GetSource() *EventSource {
+	if m != nil {
+		return m.Source
+	}
+	return nil
+}
+
+func (m *NotifyEventRequest) GetData() *EventData {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
+
+type NotifyEventResponse struct {
+	EventID              string   `protobuf:"bytes,1,opt,name=eventID,proto3" json:"eventID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *NotifyResponse) Reset()         { *m = NotifyResponse{} }
-func (m *NotifyResponse) String() string { return proto.CompactTextString(m) }
-func (*NotifyResponse) ProtoMessage()    {}
-func (*NotifyResponse) Descriptor() ([]byte, []int) {
+func (m *NotifyEventResponse) Reset()         { *m = NotifyEventResponse{} }
+func (m *NotifyEventResponse) String() string { return proto.CompactTextString(m) }
+func (*NotifyEventResponse) ProtoMessage()    {}
+func (*NotifyEventResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aba76cc4ebe272d4, []int{1}
 }
 
-func (m *NotifyResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_NotifyResponse.Unmarshal(m, b)
+func (m *NotifyEventResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NotifyEventResponse.Unmarshal(m, b)
 }
-func (m *NotifyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_NotifyResponse.Marshal(b, m, deterministic)
+func (m *NotifyEventResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NotifyEventResponse.Marshal(b, m, deterministic)
 }
-func (m *NotifyResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_NotifyResponse.Merge(m, src)
+func (m *NotifyEventResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NotifyEventResponse.Merge(m, src)
 }
-func (m *NotifyResponse) XXX_Size() int {
-	return xxx_messageInfo_NotifyResponse.Size(m)
+func (m *NotifyEventResponse) XXX_Size() int {
+	return xxx_messageInfo_NotifyEventResponse.Size(m)
 }
-func (m *NotifyResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_NotifyResponse.DiscardUnknown(m)
+func (m *NotifyEventResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_NotifyEventResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_NotifyResponse proto.InternalMessageInfo
+var xxx_messageInfo_NotifyEventResponse proto.InternalMessageInfo
 
-func (m *NotifyResponse) GetRequestID() string {
+func (m *NotifyEventResponse) GetEventID() string {
 	if m != nil {
-		return m.RequestID
+		return m.EventID
 	}
 	return ""
 }
 
 func init() {
-	proto.RegisterType((*NotifyRequest)(nil), "luids.event.v1.NotifyRequest")
-	proto.RegisterType((*NotifyResponse)(nil), "luids.event.v1.NotifyResponse")
+	proto.RegisterType((*NotifyEventRequest)(nil), "luids.event.v1.NotifyEventRequest")
+	proto.RegisterType((*NotifyEventResponse)(nil), "luids.event.v1.NotifyEventResponse")
 }
 
 func init() { proto.RegisterFile("notify.proto", fileDescriptor_aba76cc4ebe272d4) }
 
 var fileDescriptor_aba76cc4ebe272d4 = []byte{
-	// 206 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0xc9, 0xcb, 0x2f, 0xc9,
-	0x4c, 0xab, 0xd4, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0xcb, 0x29, 0xcd, 0x4c, 0x29, 0xd6,
-	0x4b, 0x2d, 0x4b, 0xcd, 0x2b, 0xd1, 0x2b, 0x33, 0x94, 0x32, 0x4a, 0xcf, 0x2c, 0xc9, 0x28, 0x4d,
-	0xd2, 0x4b, 0xce, 0xcf, 0xd5, 0x07, 0x4b, 0xe9, 0x66, 0xe6, 0xeb, 0x27, 0x16, 0x64, 0xea, 0x17,
-	0x27, 0x67, 0xa4, 0xe6, 0x26, 0x16, 0xeb, 0x83, 0x55, 0xea, 0x27, 0xe7, 0xe7, 0xe6, 0xe6, 0xe7,
-	0x41, 0xcc, 0x50, 0xb2, 0xe1, 0xe2, 0xf5, 0x03, 0x9b, 0x19, 0x94, 0x5a, 0x58, 0x9a, 0x5a, 0x5c,
-	0x22, 0xa4, 0xcd, 0xc5, 0x0a, 0x56, 0x26, 0xc1, 0xa8, 0xc0, 0xa8, 0xc1, 0x6d, 0x24, 0xaa, 0x87,
-	0x6a, 0x89, 0x9e, 0x2b, 0x88, 0x11, 0x04, 0x51, 0xa3, 0xa4, 0xc7, 0xc5, 0x07, 0xd3, 0x5d, 0x5c,
-	0x90, 0x9f, 0x57, 0x9c, 0x2a, 0x24, 0xc3, 0xc5, 0x59, 0x04, 0x31, 0xc9, 0xd3, 0x05, 0x6c, 0x04,
-	0x67, 0x10, 0x42, 0xc0, 0x28, 0x98, 0x8b, 0x0d, 0xa2, 0x5e, 0xc8, 0x13, 0xce, 0x92, 0x45, 0xb7,
-	0x01, 0xc5, 0x3d, 0x52, 0x72, 0xb8, 0xa4, 0x21, 0x16, 0x2a, 0x31, 0x38, 0x69, 0x45, 0x69, 0xe0,
-	0xf2, 0x38, 0xd8, 0x8f, 0xe9, 0xa9, 0x79, 0x10, 0x9f, 0x17, 0x24, 0x25, 0xb1, 0x81, 0x45, 0x8c,
-	0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0x00, 0x5e, 0x2c, 0x9b, 0x49, 0x01, 0x00, 0x00,
+	// 357 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x91, 0x3f, 0x6f, 0xdb, 0x30,
+	0x10, 0xc5, 0x2b, 0xd7, 0x56, 0x6b, 0xba, 0xf0, 0xc0, 0x2e, 0xac, 0xba, 0x08, 0xea, 0x22, 0x14,
+	0x30, 0xd9, 0xca, 0x53, 0xd1, 0x2d, 0x70, 0x86, 0x00, 0x41, 0x06, 0xc6, 0x43, 0x90, 0x25, 0xa0,
+	0xa4, 0xb3, 0x2c, 0x40, 0x12, 0x19, 0x93, 0x32, 0xe0, 0x6f, 0x94, 0x8f, 0x19, 0xe8, 0x64, 0x23,
+	0x76, 0xe2, 0x64, 0x3b, 0x89, 0xbf, 0xf7, 0xde, 0xfd, 0x21, 0xdf, 0x1a, 0xed, 0xca, 0xd5, 0x8e,
+	0x9b, 0x8d, 0x76, 0x9a, 0x4e, 0xab, 0xb6, 0xcc, 0x2d, 0x87, 0x2d, 0x34, 0x8e, 0x6f, 0xff, 0x06,
+	0xff, 0x8b, 0xd2, 0xad, 0xdb, 0x94, 0x67, 0xba, 0x16, 0x85, 0xae, 0x54, 0x53, 0x08, 0x04, 0xd3,
+	0x76, 0x25, 0x8c, 0xdb, 0x19, 0xb0, 0xc2, 0x95, 0x35, 0x58, 0xa7, 0x6a, 0xf3, 0x52, 0xf5, 0x66,
+	0x41, 0x72, 0x24, 0x46, 0xdf, 0x59, 0xa9, 0x85, 0x32, 0xa5, 0xb0, 0xd9, 0x1a, 0x6a, 0x65, 0x05,
+	0xc6, 0x88, 0x4c, 0xd7, 0xb5, 0x6e, 0x7a, 0x4d, 0xf4, 0x34, 0x20, 0xf4, 0x06, 0x3b, 0xba, 0xec,
+	0x1e, 0x25, 0x3c, 0xb6, 0x60, 0x1d, 0x9d, 0x91, 0x61, 0x97, 0xc6, 0x06, 0xa1, 0x17, 0x4f, 0x93,
+	0x1f, 0xfc, 0xb4, 0x4d, 0x8e, 0xec, 0x72, 0x67, 0x40, 0x22, 0x46, 0x29, 0x19, 0x66, 0x3a, 0x07,
+	0xf6, 0x39, 0xf4, 0xe2, 0x91, 0xc4, 0x9a, 0xfe, 0x21, 0xa3, 0x0a, 0xb6, 0x50, 0xb1, 0x21, 0x7a,
+	0x04, 0x67, 0x3d, 0xae, 0x3b, 0x42, 0xf6, 0x20, 0xfd, 0x47, 0x48, 0xb6, 0x01, 0xe5, 0x20, 0x7f,
+	0x70, 0x96, 0x8d, 0x42, 0x2f, 0x9e, 0x24, 0x01, 0x2f, 0xb4, 0x2e, 0x2a, 0xe0, 0x87, 0x35, 0xf0,
+	0xe5, 0x61, 0x6a, 0x39, 0xde, 0xd3, 0x4b, 0x4b, 0xe7, 0xc4, 0xb7, 0xba, 0xdd, 0x64, 0xc0, 0x7c,
+	0x94, 0xfd, 0x3c, 0x9b, 0x76, 0x8b, 0x88, 0xdc, 0xa3, 0xdd, 0x90, 0xb9, 0x72, 0x8a, 0x7d, 0x45,
+	0xc9, 0xf9, 0x21, 0x17, 0xca, 0x29, 0x89, 0x58, 0x24, 0xc8, 0xf7, 0x93, 0x4d, 0x59, 0xa3, 0x1b,
+	0x0b, 0x94, 0x91, 0x2f, 0x28, 0xb9, 0x5a, 0x30, 0x2f, 0xf4, 0xe2, 0xb1, 0x3c, 0x7c, 0x26, 0x29,
+	0xf1, 0x7b, 0x01, 0xbd, 0x23, 0x93, 0x23, 0x29, 0x8d, 0x5e, 0x47, 0xbd, 0xbd, 0x40, 0xf0, 0xeb,
+	0x43, 0xa6, 0xcf, 0x8e, 0x3e, 0x5d, 0xfc, 0xbe, 0x8f, 0xdf, 0xbb, 0x3a, 0x6e, 0xac, 0x80, 0xa6,
+	0x3f, 0xbb, 0x49, 0x53, 0x1f, 0xff, 0xcc, 0x9f, 0x03, 0x00, 0x00, 0xff, 0xff, 0xb0, 0xa9, 0x6d,
+	0x74, 0x83, 0x02, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -138,7 +189,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type NotifyClient interface {
-	Notify(ctx context.Context, in *NotifyRequest, opts ...grpc.CallOption) (*NotifyResponse, error)
+	NotifyEvent(ctx context.Context, in *NotifyEventRequest, opts ...grpc.CallOption) (*NotifyEventResponse, error)
 }
 
 type notifyClient struct {
@@ -149,9 +200,9 @@ func NewNotifyClient(cc *grpc.ClientConn) NotifyClient {
 	return &notifyClient{cc}
 }
 
-func (c *notifyClient) Notify(ctx context.Context, in *NotifyRequest, opts ...grpc.CallOption) (*NotifyResponse, error) {
-	out := new(NotifyResponse)
-	err := c.cc.Invoke(ctx, "/luids.event.v1.Notify/Notify", in, out, opts...)
+func (c *notifyClient) NotifyEvent(ctx context.Context, in *NotifyEventRequest, opts ...grpc.CallOption) (*NotifyEventResponse, error) {
+	out := new(NotifyEventResponse)
+	err := c.cc.Invoke(ctx, "/luids.event.v1.Notify/NotifyEvent", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -160,35 +211,35 @@ func (c *notifyClient) Notify(ctx context.Context, in *NotifyRequest, opts ...gr
 
 // NotifyServer is the server API for Notify service.
 type NotifyServer interface {
-	Notify(context.Context, *NotifyRequest) (*NotifyResponse, error)
+	NotifyEvent(context.Context, *NotifyEventRequest) (*NotifyEventResponse, error)
 }
 
 // UnimplementedNotifyServer can be embedded to have forward compatible implementations.
 type UnimplementedNotifyServer struct {
 }
 
-func (*UnimplementedNotifyServer) Notify(ctx context.Context, req *NotifyRequest) (*NotifyResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Notify not implemented")
+func (*UnimplementedNotifyServer) NotifyEvent(ctx context.Context, req *NotifyEventRequest) (*NotifyEventResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NotifyEvent not implemented")
 }
 
 func RegisterNotifyServer(s *grpc.Server, srv NotifyServer) {
 	s.RegisterService(&_Notify_serviceDesc, srv)
 }
 
-func _Notify_Notify_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NotifyRequest)
+func _Notify_NotifyEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NotifyEventRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NotifyServer).Notify(ctx, in)
+		return srv.(NotifyServer).NotifyEvent(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/luids.event.v1.Notify/Notify",
+		FullMethod: "/luids.event.v1.Notify/NotifyEvent",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NotifyServer).Notify(ctx, req.(*NotifyRequest))
+		return srv.(NotifyServer).NotifyEvent(ctx, req.(*NotifyEventRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -198,8 +249,8 @@ var _Notify_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*NotifyServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Notify",
-			Handler:    _Notify_Notify_Handler,
+			MethodName: "NotifyEvent",
+			Handler:    _Notify_NotifyEvent_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

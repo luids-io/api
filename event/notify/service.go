@@ -4,7 +4,6 @@ package notify
 
 import (
 	"context"
-	"errors"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -30,28 +29,19 @@ func RegisterServer(server *grpc.Server, service *Service) {
 	pb.RegisterNotifyServer(server, service)
 }
 
-// Notify implements API service
-func (s *Service) Notify(ctx context.Context, in *pb.NotifyRequest) (*pb.NotifyResponse, error) {
-	e, err := eventFromRequest(in)
+// NotifyEvent implements API service
+func (s *Service) NotifyEvent(ctx context.Context, in *pb.NotifyEventRequest) (*pb.NotifyEventResponse, error) {
+	e, err := encoding.FromNotifyEventRequest(in)
 	if err != nil {
 		rpcerr := status.Error(codes.InvalidArgument, "request is not valid")
 		return nil, rpcerr
 	}
-	reqID, err := s.notifier.NotifyEvent(ctx, e)
+	eventID, err := s.notifier.NotifyEvent(ctx, e)
 	if err != nil {
 		rpcerr := status.Error(codes.Internal, err.Error())
 		return nil, rpcerr
 	}
-	reply := &pb.NotifyResponse{RequestID: reqID}
-	return reply, nil
-}
-
-func eventFromRequest(req *pb.NotifyRequest) (event.Event, error) {
-	pbevent := req.GetEvent()
-	if pbevent == nil {
-		return event.Event{}, errors.New("event is empty")
-	}
-	return encoding.Event(pbevent)
+	return &pb.NotifyEventResponse{EventID: eventID}, nil
 }
 
 //mapping errors

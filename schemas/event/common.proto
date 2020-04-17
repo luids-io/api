@@ -7,38 +7,34 @@ import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
 package luids.event.v1;
 option go_package = "github.com/luids-io/api/protogen/eventpb";
 
-message Event {
-  string id =1;
-  enum Type {
-    SECURITY = 0;
-  }
-  Type type = 2;
-  int32 code = 3;
-  enum Level {
-    INFO = 0;
-    LOW = 1;
-    MEDIUM = 2;
-    HIGH = 3;
-    CRITICAL = 4;
-  }
-  Level level = 4;
-  google.protobuf.Timestamp created_ts  = 5;
-  google.protobuf.Timestamp received_ts = 6;
-
-  message Source {
-    string hostname = 1;
-    string program = 2;
-    string instance = 3;
-  }
-  Source source = 7;
-  message Data {
-    enum DataEnc {
-      NODATA = 0;
-      JSON = 1;
-    }  
-    DataEnc dataEnc = 1;
-    bytes data = 2;
-  }
-  Data data = 8;
+enum EventType {
+  SECURITY = 0;
 }
 
+enum EventLevel {
+  INFO = 0;
+  LOW = 1;
+  MEDIUM = 2;
+  HIGH = 3;
+  CRITICAL = 4;
+}
+
+message EventSource {
+  string hostname = 1;
+  string program = 2;
+  string instance = 3;
+}
+
+message ProcessInfo {
+  google.protobuf.Timestamp received_ts = 1;
+  EventSource processor = 2;
+}
+
+message EventData {
+  enum DataEnc {
+    NODATA = 0;
+    JSON   = 1;
+  }  
+  DataEnc dataEnc = 1;
+  bytes   data = 2;
+}

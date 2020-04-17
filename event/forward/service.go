@@ -1,6 +1,6 @@
 // Copyright 2019 Luis Guillén Civera <luisguillenc@gmail.com>. See LICENSE.
 
-package archive
+package forward
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/luids-io/api/event/encoding"
 	pb "github.com/luids-io/api/protogen/eventpb"
 	"github.com/luids-io/core/event"
@@ -16,33 +17,30 @@ import (
 
 // Service implements a service wrapper for the grpc api
 type Service struct {
-	archiver event.Archiver
+	forwarder event.Forwarder
 }
 
 // NewService returns a new Service for the grpc api
-func NewService(a event.Archiver) *Service {
-	return &Service{archiver: a}
+func NewService(f event.Forwarder) *Service {
+	return &Service{forwarder: f}
 }
 
 // RegisterServer registers a service in the grpc server
 func RegisterServer(server *grpc.Server, service *Service) {
-	pb.RegisterArchiveServer(server, service)
+	pb.RegisterForwardServer(server, service)
 }
 
-// SaveEvent implements API service
-func (s *Service) SaveEvent(ctx context.Context, in *pb.SaveEventRequest) (*pb.SaveEventResponse, error) {
-	e, err := encoding.FromSaveEventRequest(in)
+// ForwardEvent implements API service
+func (s *Service) ForwardEvent(ctx context.Context, in *pb.ForwardEventRequest) (*empty.Empty, error) {
+	e, err := encoding.FromForwardEventRequest(in)
 	if err != nil {
-		rpcerr := status.Error(codes.InvalidArgument, "request is not valid")
-		return nil, rpcerr
+		return &empty.Empty{}, status.Error(codes.InvalidArgument, "request is not valid")
 	}
-	sID, err := s.archiver.SaveEvent(ctx, e)
+	err = s.forwarder.ForwardEvent(ctx, e)
 	if err != nil {
-		rpcerr := status.Error(codes.Internal, err.Error())
-		return nil, rpcerr
+		return &empty.Empty{}, status.Error(codes.Internal, err.Error())
 	}
-	reply := &pb.SaveEventResponse{StorageID: sID}
-	return reply, nil
+	return &empty.Empty{}, nil
 }
 
 //mapping errors

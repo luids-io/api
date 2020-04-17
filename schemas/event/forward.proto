@@ -2,26 +2,25 @@
 
 syntax = "proto3";
 
+import "github.com/golang/protobuf/ptypes/empty/empty.proto";
 import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
 import "github.com/luids-io/api/schemas/event/common.proto";
 
 package luids.event.v1;
 option go_package = "github.com/luids-io/api/protogen/eventpb";
 
-service Notify {
-   rpc NotifyEvent (NotifyEventRequest) returns (NotifyEventResponse) {}
+service Forward {
+   rpc ForwardEvent (ForwardEventRequest) returns (google.protobuf.Empty) {}
 }
 
-message NotifyEventRequest {
+message ForwardEventRequest {
+  string     id = 1;
   EventType  type = 2;
   int32      code = 3;
   EventLevel level = 4;
   google.protobuf.Timestamp created_ts  = 5;
   EventSource source = 6;
+  repeated ProcessInfo processors = 7;
   EventData data = 8;
-}
-
-message NotifyEventResponse {
-  string eventID = 1;
 }
 

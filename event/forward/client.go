@@ -1,6 +1,6 @@
 // Copyright 2019 Luis Guillén Civera <luisguillenc@gmail.com>. See LICENSE.
 
-package archive
+package forward
 
 import (
 	"context"
@@ -22,7 +22,7 @@ type Client struct {
 	logger yalogi.Logger
 	//grpc connection
 	conn   *grpc.ClientConn
-	client pb.ArchiveClient
+	client pb.ForwardClient
 	//control
 	started bool
 }
@@ -66,32 +66,27 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 		opts:    opts,
 		logger:  opts.logger,
 		conn:    conn,
-		client:  pb.NewArchiveClient(conn),
+		client:  pb.NewForwardClient(conn),
 		started: true,
 	}
 }
 
-// SaveEvent implements event.Archiver interface
-func (c *Client) SaveEvent(ctx context.Context, e event.Event) (string, error) {
+// ForwardEvent implements event.Forwarder interface
+func (c *Client) ForwardEvent(ctx context.Context, e event.Event) error {
 	if !c.started {
-		return "", errors.New("client closed")
+		return errors.New("client closed")
 	}
 	//create request
-	req, err := encoding.SaveEventRequest(e)
+	req, err := encoding.ForwardEventRequest(e)
 	if err != nil {
-		return "", fmt.Errorf("serializing event: %v", err)
+		return fmt.Errorf("serializing event: %v", err)
 	}
 	//notify request
-	resp, err := c.client.SaveEvent(ctx, req)
+	_, err = c.client.ForwardEvent(ctx, req)
 	if err != nil {
-		return "", c.mapError(err)
+		return c.mapError(err)
 	}
-	//process response
-	sID := resp.GetStorageID()
-	if sID == "" {
-		return "", fmt.Errorf("processing response: stored id empty")
-	}
-	return sID, nil
+	return nil
 }
 
 //mapping errors routine
