@@ -71,8 +71,8 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	}
 }
 
-// Notify implements event.Notifier interface
-func (c *Client) Notify(ctx context.Context, e event.Event) (string, error) {
+// NotifyEvent implements event.Notifier interface
+func (c *Client) NotifyEvent(ctx context.Context, e event.Event) (string, error) {
 	if !c.started {
 		return "", errors.New("client closed")
 	}

@@ -37,7 +37,7 @@ func (s *Service) Notify(ctx context.Context, in *pb.NotifyRequest) (*pb.NotifyR
 		rpcerr := status.Error(codes.InvalidArgument, "request is not valid")
 		return nil, rpcerr
 	}
-	reqID, err := s.notifier.Notify(ctx, e)
+	reqID, err := s.notifier.NotifyEvent(ctx, e)
 	if err != nil {
 		rpcerr := status.Error(codes.Internal, err.Error())
 		return nil, rpcerr
