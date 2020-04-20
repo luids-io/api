@@ -13,7 +13,6 @@ import (
 func NotifyEventRequest(e event.Event) (*pb.NotifyEventRequest, error) {
 	var err error
 	req := &pb.NotifyEventRequest{}
-	req.Type = pb.EventType(e.Type)
 	req.Code = int32(e.Code)
 	req.Level = pb.EventLevel(e.Level)
 	req.CreatedTs, _ = ptypes.TimestampProto(e.Created)
@@ -29,7 +28,6 @@ func NotifyEventRequest(e event.Event) (*pb.NotifyEventRequest, error) {
 func FromNotifyEventRequest(req *pb.NotifyEventRequest) (event.Event, error) {
 	var err error
 	e := event.Event{}
-	e.Type = event.Type(req.GetType())
 	e.Code = event.Code(req.GetCode())
 	e.Level = event.Level(req.GetLevel())
 	e.Created, _ = ptypes.Timestamp(req.GetCreatedTs())

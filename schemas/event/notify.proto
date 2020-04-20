@@ -13,12 +13,11 @@ service Notify {
 }
 
 message NotifyEventRequest {
-  EventType  type = 2;
-  int32      code = 3;
-  EventLevel level = 4;
-  google.protobuf.Timestamp created_ts  = 5;
-  EventSource source = 6;
-  EventData data = 8;
+  int32      code = 1;
+  EventLevel level = 2;
+  google.protobuf.Timestamp created_ts  = 3;
+  EventSource source = 4;
+  EventData data = 5;
 }
 
 message NotifyEventResponse {

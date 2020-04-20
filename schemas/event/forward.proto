@@ -22,5 +22,8 @@ message ForwardEventRequest {
   EventSource source = 6;
   repeated ProcessInfo processors = 7;
   EventData data = 8;
+  string codename = 9;
+  string description = 10;
+  repeated string tags = 11;
 }
 

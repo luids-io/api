@@ -29,6 +29,12 @@ func SaveEventRequest(e event.Event) (*pb.SaveEventRequest, error) {
 	if err != nil {
 		return nil, err
 	}
+	req.Codename = e.Codename
+	req.Description = e.Description
+	if len(e.Tags) > 0 {
+		req.Tags = make([]string, len(e.Tags), len(e.Tags))
+		copy(req.Tags, e.Tags)
+	}
 	return req, nil
 }
 
@@ -63,6 +69,13 @@ func FromSaveEventRequest(req *pb.SaveEventRequest) (event.Event, error) {
 	e.Data, err = EventData(pbdata)
 	if err != nil {
 		return event.Event{}, err
+	}
+	e.Codename = req.GetCodename()
+	e.Description = req.GetDescription()
+	tags := req.GetTags()
+	if len(tags) > 0 {
+		e.Tags = make([]string, len(tags), len(tags))
+		copy(e.Tags, tags)
 	}
 	return e, nil
 }
