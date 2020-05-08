@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "github.com/luids-io/api/protogen/xlistpb"
+	"github.com/luids-io/core/utils/yalogi"
 	"github.com/luids-io/core/xlist"
 )
 
@@ -18,15 +19,19 @@ import (
 // grpc requests.
 type Service struct {
 	opts    serviceOpts
+	logger  yalogi.Logger
 	checker xlist.Checker
 }
 
 type serviceOpts struct {
+	logger        yalogi.Logger
 	exposePing    bool
 	disclosureErr bool
 }
 
-var defaultServiceOpts = serviceOpts{}
+var defaultServiceOpts = serviceOpts{
+	logger: yalogi.LogNull,
+}
 
 // ServiceOption is used for service configuration
 type ServiceOption func(*serviceOpts)
@@ -46,13 +51,22 @@ func DisclosureErrors(b bool) ServiceOption {
 	}
 }
 
+// SetServiceLogger option allows set a custom logger
+func SetServiceLogger(l yalogi.Logger) ServiceOption {
+	return func(o *serviceOpts) {
+		if l != nil {
+			o.logger = l
+		}
+	}
+}
+
 // NewService returns a new Service for the cheker
 func NewService(checker xlist.Checker, opt ...ServiceOption) *Service {
 	opts := defaultServiceOpts
 	for _, o := range opt {
 		o(&opts)
 	}
-	return &Service{checker: checker, opts: opts}
+	return &Service{checker: checker, opts: opts, logger: opts.logger}
 }
 
 // RegisterServer registers a service in the grpc server
@@ -62,9 +76,11 @@ func RegisterServer(server *grpc.Server, service *Service) {
 
 // Check implements grpc handler for Check
 func (s *Service) Check(ctx context.Context, in *pb.CheckRequest) (*pb.CheckResponse, error) {
-	name := in.GetRequest().GetName()
-	resource := xlist.Resource(in.GetRequest().GetResource())
-	resp, err := s.checker.Check(ctx, name, resource)
+	req := in.GetRequest()
+	if req == nil {
+		return nil, s.mapError(xlist.ErrBadRequest)
+	}
+	resp, err := s.checker.Check(ctx, req.GetName(), xlist.Resource(req.GetResource()))
 	if err != nil {
 		return nil, s.mapError(err)
 	}
@@ -92,27 +108,29 @@ func (s *Service) Ping(ctx context.Context, in *empty.Empty) (*empty.Empty, erro
 	if s.opts.exposePing {
 		err := s.checker.Ping()
 		if err != nil {
-			return nil, s.mapError(err)
+			rpcerr := status.Error(codes.Unavailable, xlist.ErrUnavailable.Error())
+			if s.opts.disclosureErr {
+				rpcerr = status.Error(codes.Unavailable, err.Error())
+			}
+			return nil, rpcerr
 		}
 	}
 	return &empty.Empty{}, nil
 }
 
-//mapping errors
+//mapping checking errors
 func (s *Service) mapError(err error) error {
 	switch err {
 	case xlist.ErrBadRequest:
 		return status.Error(codes.InvalidArgument, err.Error())
-	case xlist.ErrReadOnlyMode:
-		return status.Error(codes.PermissionDenied, err.Error())
-	case xlist.ErrNotImplemented:
+	case xlist.ErrNotSupported:
 		return status.Error(codes.Unimplemented, err.Error())
-	case xlist.ErrNotAvailable:
+	case xlist.ErrUnavailable:
 		return status.Error(codes.Unavailable, err.Error())
 	default:
-		rpcerr := status.Error(codes.Unavailable, xlist.ErrNotAvailable.Error())
+		rpcerr := status.Error(codes.Internal, xlist.ErrInternal.Error())
 		if s.opts.disclosureErr {
-			rpcerr = status.Error(codes.Unavailable, err.Error())
+			rpcerr = status.Error(codes.Internal, err.Error())
 		}
 		return rpcerr
 	}
