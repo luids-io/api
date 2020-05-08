@@ -121,6 +121,8 @@ func (s *Service) Ping(ctx context.Context, in *empty.Empty) (*empty.Empty, erro
 //mapping checking errors
 func (s *Service) mapError(err error) error {
 	switch err {
+	case xlist.ErrCanceledRequest:
+		return status.Error(codes.Canceled, err.Error())
 	case xlist.ErrBadRequest:
 		return status.Error(codes.InvalidArgument, err.Error())
 	case xlist.ErrNotSupported:

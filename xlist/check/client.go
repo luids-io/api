@@ -261,6 +261,8 @@ func (c *Client) mapError(err error) error {
 		return err
 	}
 	switch st.Code() {
+	case codes.Canceled:
+		return xlist.ErrCanceledRequest
 	case codes.InvalidArgument:
 		return xlist.ErrBadRequest
 	case codes.Unimplemented:
