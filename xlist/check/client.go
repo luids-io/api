@@ -145,7 +145,8 @@ func (c *Client) Check(ctx context.Context, name string, resource xlist.Resource
 	}
 	if !c.synced {
 		if err := c.sync(ctx); err != nil {
-			return xlist.Response{}, xlist.ErrUnavailable
+			c.logger.Warnf("sync(): %v", err)
+			return xlist.Response{}, c.mapError(err)
 		}
 	}
 	if !c.checks(resource) {
@@ -259,18 +260,18 @@ func (c *Client) mapError(err error) error {
 	if !ok {
 		return err
 	}
-	retErr := errors.New(st.Message())
 	switch st.Code() {
 	case codes.InvalidArgument:
-		retErr = xlist.ErrBadRequest
+		return xlist.ErrBadRequest
 	case codes.Unimplemented:
-		retErr = xlist.ErrNotSupported
+		return xlist.ErrNotSupported
 	case codes.Internal:
-		retErr = xlist.ErrInternal
+		return xlist.ErrInternal
 	case codes.Unavailable:
-		retErr = xlist.ErrUnavailable
+		return xlist.ErrUnavailable
+	default:
+		return xlist.ErrUnavailable
 	}
-	return retErr
 }
 
 //Flush cache if set
