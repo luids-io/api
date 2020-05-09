@@ -12,16 +12,40 @@ import (
 	"github.com/luids-io/api/event/encoding"
 	pb "github.com/luids-io/api/protogen/eventpb"
 	"github.com/luids-io/core/event"
+	"github.com/luids-io/core/utils/yalogi"
 )
 
 // Service implements a service wrapper for the grpc api
 type Service struct {
+	logger   yalogi.Logger
 	archiver event.Archiver
 }
 
+type serviceOpts struct {
+	logger yalogi.Logger
+}
+
+var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
+
+// ServiceOption is used for service configuration
+type ServiceOption func(*serviceOpts)
+
+// SetServiceLogger option allows set a custom logger
+func SetServiceLogger(l yalogi.Logger) ServiceOption {
+	return func(o *serviceOpts) {
+		if l != nil {
+			o.logger = l
+		}
+	}
+}
+
 // NewService returns a new Service for the grpc api
-func NewService(a event.Archiver) *Service {
-	return &Service{archiver: a}
+func NewService(a event.Archiver, opt ...ServiceOption) *Service {
+	opts := defaultServiceOpts
+	for _, o := range opt {
+		o(&opts)
+	}
+	return &Service{archiver: a, logger: opts.logger}
 }
 
 // RegisterServer registers a service in the grpc server
@@ -33,19 +57,29 @@ func RegisterServer(server *grpc.Server, service *Service) {
 func (s *Service) SaveEvent(ctx context.Context, in *pb.SaveEventRequest) (*pb.SaveEventResponse, error) {
 	e, err := encoding.FromSaveEventRequest(in)
 	if err != nil {
-		rpcerr := status.Error(codes.InvalidArgument, "request is not valid")
-		return nil, rpcerr
+		return nil, s.mapError(event.ErrBadRequest)
 	}
 	sID, err := s.archiver.SaveEvent(ctx, e)
 	if err != nil {
-		rpcerr := status.Error(codes.Internal, err.Error())
-		return nil, rpcerr
+		return nil, s.mapError(err)
 	}
-	reply := &pb.SaveEventResponse{StorageID: sID}
-	return reply, nil
+	return &pb.SaveEventResponse{StorageID: sID}, nil
 }
 
 //mapping errors
 func (s *Service) mapError(err error) error {
-	return status.Error(codes.Unavailable, err.Error())
+	switch err {
+	case event.ErrCanceledRequest:
+		return status.Error(codes.Canceled, err.Error())
+	case event.ErrBadRequest:
+		return status.Error(codes.InvalidArgument, err.Error())
+	case event.ErrUnauthorized:
+		return status.Error(codes.PermissionDenied, err.Error())
+	case event.ErrNotSupported:
+		return status.Error(codes.Unimplemented, err.Error())
+	case event.ErrUnavailable:
+		return status.Error(codes.Unavailable, err.Error())
+	default:
+		return status.Error(codes.Internal, event.ErrInternal.Error())
+	}
 }

@@ -13,16 +13,40 @@ import (
 	"github.com/luids-io/api/event/encoding"
 	pb "github.com/luids-io/api/protogen/eventpb"
 	"github.com/luids-io/core/event"
+	"github.com/luids-io/core/utils/yalogi"
 )
 
 // Service implements a service wrapper for the grpc api
 type Service struct {
+	logger    yalogi.Logger
 	forwarder event.Forwarder
 }
 
+type serviceOpts struct {
+	logger yalogi.Logger
+}
+
+var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
+
+// ServiceOption is used for service configuration
+type ServiceOption func(*serviceOpts)
+
+// SetServiceLogger option allows set a custom logger
+func SetServiceLogger(l yalogi.Logger) ServiceOption {
+	return func(o *serviceOpts) {
+		if l != nil {
+			o.logger = l
+		}
+	}
+}
+
 // NewService returns a new Service for the grpc api
-func NewService(f event.Forwarder) *Service {
-	return &Service{forwarder: f}
+func NewService(f event.Forwarder, opt ...ServiceOption) *Service {
+	opts := defaultServiceOpts
+	for _, o := range opt {
+		o(&opts)
+	}
+	return &Service{forwarder: f, logger: opts.logger}
 }
 
 // RegisterServer registers a service in the grpc server
@@ -34,16 +58,29 @@ func RegisterServer(server *grpc.Server, service *Service) {
 func (s *Service) ForwardEvent(ctx context.Context, in *pb.ForwardEventRequest) (*empty.Empty, error) {
 	e, err := encoding.FromForwardEventRequest(in)
 	if err != nil {
-		return &empty.Empty{}, status.Error(codes.InvalidArgument, "request is not valid")
+		return nil, s.mapError(event.ErrBadRequest)
 	}
 	err = s.forwarder.ForwardEvent(ctx, e)
 	if err != nil {
-		return &empty.Empty{}, status.Error(codes.Internal, err.Error())
+		return nil, s.mapError(err)
 	}
 	return &empty.Empty{}, nil
 }
 
 //mapping errors
 func (s *Service) mapError(err error) error {
-	return status.Error(codes.Unavailable, err.Error())
+	switch err {
+	case event.ErrCanceledRequest:
+		return status.Error(codes.Canceled, err.Error())
+	case event.ErrBadRequest:
+		return status.Error(codes.InvalidArgument, err.Error())
+	case event.ErrUnauthorized:
+		return status.Error(codes.PermissionDenied, err.Error())
+	case event.ErrNotSupported:
+		return status.Error(codes.Unimplemented, err.Error())
+	case event.ErrUnavailable:
+		return status.Error(codes.Unavailable, err.Error())
+	default:
+		return status.Error(codes.Internal, event.ErrInternal.Error())
+	}
 }

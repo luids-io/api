@@ -8,7 +8,9 @@ import (
 	"fmt"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/status"
 
 	"github.com/luids-io/api/event/encoding"
 	pb "github.com/luids-io/api/protogen/eventpb"
@@ -24,7 +26,7 @@ type Client struct {
 	conn   *grpc.ClientConn
 	client pb.ArchiveClient
 	//control
-	started bool
+	closed bool
 }
 
 type clientOpts struct {
@@ -63,49 +65,59 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 		o(&opts)
 	}
 	return &Client{
-		opts:    opts,
-		logger:  opts.logger,
-		conn:    conn,
-		client:  pb.NewArchiveClient(conn),
-		started: true,
+		opts:   opts,
+		logger: opts.logger,
+		conn:   conn,
+		client: pb.NewArchiveClient(conn),
 	}
 }
 
 // SaveEvent implements event.Archiver interface
 func (c *Client) SaveEvent(ctx context.Context, e event.Event) (string, error) {
-	if !c.started {
-		return "", errors.New("client closed")
+	if c.closed {
+		return "", c.mapError(event.ErrUnavailable)
 	}
 	//create request
 	req, err := encoding.SaveEventRequest(e)
 	if err != nil {
-		return "", fmt.Errorf("serializing event: %v", err)
+		return "", c.mapError(event.ErrBadRequest)
 	}
 	//notify request
 	resp, err := c.client.SaveEvent(ctx, req)
 	if err != nil {
 		return "", c.mapError(err)
 	}
-	//process response
-	sID := resp.GetStorageID()
-	if sID == "" {
-		return "", fmt.Errorf("processing response: stored id empty")
-	}
-	return sID, nil
+	return resp.GetStorageID(), nil
 }
 
-//mapping errors routine
+//mapping errors
 func (c *Client) mapError(err error) error {
-	//TODO
-	return err
+	st, ok := status.FromError(err)
+	if !ok {
+		return err
+	}
+	switch st.Code() {
+	case codes.Canceled:
+		return event.ErrCanceledRequest
+	case codes.InvalidArgument:
+		return event.ErrBadRequest
+	case codes.Unimplemented:
+		return event.ErrNotSupported
+	case codes.Internal:
+		return event.ErrInternal
+	case codes.Unavailable:
+		return event.ErrUnavailable
+	default:
+		return event.ErrUnavailable
+	}
 }
 
 //Close the client
 func (c *Client) Close() error {
-	if !c.started {
+	if c.closed {
 		return errors.New("client closed")
 	}
-	c.started = false
+	c.closed = true
 	if c.opts.closeConn {
 		return c.conn.Close()
 	}
@@ -114,7 +126,7 @@ func (c *Client) Close() error {
 
 // Ping checks connectivity with the api
 func (c *Client) Ping() error {
-	if !c.started {
+	if c.closed {
 		return errors.New("client closed")
 	}
 	st := c.conn.GetState()
