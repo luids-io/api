@@ -4,6 +4,7 @@ package resolvcollect
 
 import (
 	"context"
+	"errors"
 	"net"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -13,27 +14,30 @@ import (
 
 	pb "github.com/luids-io/api/protogen/dnsutilpb"
 	"github.com/luids-io/core/dnsutil"
+	"github.com/luids-io/core/utils/yalogi"
 )
 
 // Service implements a service wrapper for the grpc api
 type Service struct {
-	opts      serviceOpts
+	logger    yalogi.Logger
 	collector dnsutil.ResolvCollector
 }
 
 type serviceOpts struct {
-	disclosureErr bool
+	logger yalogi.Logger
 }
 
-var defaultServiceOpts = serviceOpts{}
+var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
 
 // ServiceOption is used for service configuration
 type ServiceOption func(*serviceOpts)
 
-// DisclosureErrors returns errors without replacing by a generic message
-func DisclosureErrors(b bool) ServiceOption {
+// SetServiceLogger option allows set a custom logger
+func SetServiceLogger(l yalogi.Logger) ServiceOption {
 	return func(o *serviceOpts) {
-		o.disclosureErr = b
+		if l != nil {
+			o.logger = l
+		}
 	}
 }
 
@@ -43,7 +47,7 @@ func NewService(c dnsutil.ResolvCollector, opt ...ServiceOption) *Service {
 	for _, o := range opt {
 		o(&opts)
 	}
-	return &Service{collector: c, opts: opts}
+	return &Service{collector: c, logger: opts.logger}
 }
 
 // RegisterServer registers a service in the grpc server
@@ -56,7 +60,7 @@ func (s *Service) Collect(ctx context.Context, req *pb.ResolvCollectRequest) (*e
 	//parse request
 	client, name, resolved, err := parseRequest(req)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, s.mapError(dnsutil.ErrBadRequest)
 	}
 	//do request
 	err = s.collector.Collect(ctx, client, name, resolved)
@@ -70,42 +74,42 @@ func (s *Service) Collect(ctx context.Context, req *pb.ResolvCollectRequest) (*e
 func parseRequest(req *pb.ResolvCollectRequest) (net.IP, string, []net.IP, error) {
 	client := net.ParseIP(req.GetClientIp())
 	if client == nil {
-		return nil, "", nil, dnsutil.ErrBadRequestFormat
+		return nil, "", nil, errors.New("bad client ip")
 	}
 	name := req.GetName()
 	if name == "" {
-		return nil, "", nil, dnsutil.ErrBadRequestFormat
+		return nil, "", nil, errors.New("bad dns name")
 	}
 	if len(req.GetResolvedIps()) == 0 {
-		return nil, "", nil, dnsutil.ErrBadRequestFormat
+		return nil, "", nil, errors.New("resolved ips empty")
 	}
 	resolved := make([]net.IP, 0, len(req.GetResolvedIps()))
 	for _, r := range req.GetResolvedIps() {
 		ip := net.ParseIP(r)
 		if ip == nil {
-			return nil, "", nil, dnsutil.ErrBadRequestFormat
+			return nil, "", nil, errors.New("bad resolved ip")
 		}
 		resolved = append(resolved, ip)
 	}
 	return client, name, resolved, nil
 }
 
-//mapping errors
+//mapping checking errors
 func (s *Service) mapError(err error) error {
 	switch err {
-	case dnsutil.ErrBadRequestFormat:
+	case dnsutil.ErrCanceledRequest:
+		return status.Error(codes.Canceled, err.Error())
+	case dnsutil.ErrBadRequest:
 		return status.Error(codes.InvalidArgument, err.Error())
-	case dnsutil.ErrCollectDNSClientLimit:
-		return status.Error(codes.ResourceExhausted, err.Error())
-	case dnsutil.ErrCollectNamesLimit:
-		return status.Error(codes.ResourceExhausted, err.Error())
-	case dnsutil.ErrServiceNotAvailable:
+	case dnsutil.ErrNotSupported:
+		return status.Error(codes.Unimplemented, err.Error())
+	case dnsutil.ErrUnavailable:
 		return status.Error(codes.Unavailable, err.Error())
+	case dnsutil.ErrLimitDNSClientQueries:
+		return status.Error(codes.ResourceExhausted, err.Error())
+	case dnsutil.ErrLimitResolvedNamesIP:
+		return status.Error(codes.ResourceExhausted, err.Error())
 	default:
-		rpcerr := status.Error(codes.Unavailable, dnsutil.ErrServiceNotAvailable.Error())
-		if s.opts.disclosureErr {
-			rpcerr = status.Error(codes.Unavailable, err.Error())
-		}
-		return rpcerr
+		return status.Error(codes.Internal, dnsutil.ErrInternal.Error())
 	}
 }

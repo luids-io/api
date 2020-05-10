@@ -27,7 +27,7 @@ type Client struct {
 	conn   *grpc.ClientConn
 	client pb.ArchiveClient
 	//control
-	started bool
+	closed bool
 }
 
 type clientOpts struct {
@@ -66,23 +66,19 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 		o(&opts)
 	}
 	return &Client{
-		opts:    opts,
-		logger:  opts.logger,
-		conn:    conn,
-		client:  pb.NewArchiveClient(conn),
-		started: true,
+		opts:   opts,
+		logger: opts.logger,
+		conn:   conn,
+		client: pb.NewArchiveClient(conn),
 	}
 }
 
 // SaveResolv implements dnsutil.Archiver interface
 func (c *Client) SaveResolv(ctx context.Context, data dnsutil.ResolvData) (string, error) {
-	if !c.started {
-		return "", errors.New("client closed")
+	if c.closed {
+		return "", dnsutil.ErrUnavailable
 	}
-	return c.doSave(ctx, data)
-}
-
-func (c *Client) doSave(ctx context.Context, data dnsutil.ResolvData) (string, error) {
+	//create request
 	tstamp, _ := ptypes.TimestampProto(data.Timestamp)
 	req := &pb.SaveResolvRequest{
 		Ts:                tstamp,
@@ -101,6 +97,7 @@ func (c *Client) doSave(ctx context.Context, data dnsutil.ResolvData) (string, e
 			req.ResolvedIps = append(req.ResolvedIps, r.String())
 		}
 	}
+	//do save
 	resp, err := c.client.SaveResolv(ctx, req)
 	if err != nil {
 		return "", c.mapError(err)
@@ -114,24 +111,28 @@ func (c *Client) mapError(err error) error {
 	if !ok {
 		return err
 	}
-	retErr := errors.New(st.Message())
 	switch st.Code() {
+	case codes.Canceled:
+		return dnsutil.ErrCanceledRequest
 	case codes.InvalidArgument:
-		retErr = dnsutil.ErrBadRequestFormat
+		return dnsutil.ErrBadRequest
+	case codes.Unimplemented:
+		return dnsutil.ErrNotSupported
+	case codes.Internal:
+		return dnsutil.ErrInternal
 	case codes.Unavailable:
-		if st.Message() == dnsutil.ErrServiceNotAvailable.Error() {
-			retErr = dnsutil.ErrServiceNotAvailable
-		}
+		return dnsutil.ErrUnavailable
+	default:
+		return dnsutil.ErrUnavailable
 	}
-	return retErr
 }
 
 //Close closes the client
 func (c *Client) Close() error {
-	if !c.started {
+	if c.closed {
 		return errors.New("client closed")
 	}
-	c.started = false
+	c.closed = true
 	if c.opts.closeConn {
 		return c.conn.Close()
 	}
@@ -140,7 +141,7 @@ func (c *Client) Close() error {
 
 // Ping checks connectivity with the api
 func (c *Client) Ping() error {
-	if !c.started {
+	if c.closed {
 		return errors.New("client closed")
 	}
 	st := c.conn.GetState()

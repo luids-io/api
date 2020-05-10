@@ -11,7 +11,9 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/status"
 
 	pb "github.com/luids-io/api/protogen/dnsutilpb"
 	"github.com/luids-io/core/dnsutil"
@@ -27,7 +29,7 @@ type Client struct {
 	conn   *grpc.ClientConn
 	client pb.ResolvCheckClient
 	//control
-	started bool
+	closed bool
 	//cache
 	cache *cache
 }
@@ -106,11 +108,10 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 		o(&opts)
 	}
 	c := &Client{
-		opts:    opts,
-		logger:  opts.logger,
-		conn:    conn,
-		client:  pb.NewResolvCheckClient(conn),
-		started: true,
+		opts:   opts,
+		logger: opts.logger,
+		conn:   conn,
+		client: pb.NewResolvCheckClient(conn),
 	}
 	if opts.useCache {
 		c.cache = newCache(opts.ttl, opts.negativettl, opts.cacheCleanup)
@@ -120,8 +121,8 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 
 // Check implements dnsutil.ResolvChecker interface
 func (c *Client) Check(ctx context.Context, client, resolved net.IP, name string) (dnsutil.ResolvResponse, error) {
-	if !c.started {
-		return dnsutil.ResolvResponse{}, errors.New("client closed")
+	if c.closed {
+		return dnsutil.ResolvResponse{}, dnsutil.ErrBadRequest
 	}
 	if c.opts.useCache {
 		resp, ok := c.cache.get(client, resolved, name)
@@ -139,18 +140,34 @@ func (c *Client) Check(ctx context.Context, client, resolved net.IP, name string
 	return response, err
 }
 
-//mapping errors routine
+//mapping errors
 func (c *Client) mapError(err error) error {
-	//TODO
-	return err
+	st, ok := status.FromError(err)
+	if !ok {
+		return err
+	}
+	switch st.Code() {
+	case codes.Canceled:
+		return dnsutil.ErrCanceledRequest
+	case codes.InvalidArgument:
+		return dnsutil.ErrBadRequest
+	case codes.Unimplemented:
+		return dnsutil.ErrNotSupported
+	case codes.Internal:
+		return dnsutil.ErrInternal
+	case codes.Unavailable:
+		return dnsutil.ErrUnavailable
+	default:
+		return dnsutil.ErrUnavailable
+	}
 }
 
 //Close closes the client
 func (c *Client) Close() error {
-	if !c.started {
+	if c.closed {
 		return errors.New("client closed")
 	}
-	c.started = false
+	c.closed = true
 	if c.opts.closeConn {
 		return c.conn.Close()
 	}
@@ -159,7 +176,7 @@ func (c *Client) Close() error {
 
 // Ping checks connectivity with the api
 func (c *Client) Ping() error {
-	if !c.started {
+	if c.closed {
 		return errors.New("client closed")
 	}
 	st := c.conn.GetState()
@@ -191,10 +208,9 @@ func (c *Client) doCheck(ctx context.Context, client, resolved net.IP, name stri
 		resp.Last, _ = ptypes.Timestamp(tstamp)
 	}
 	tstamp = response.GetStoreTs()
-	if tstamp == nil {
-		return dnsutil.ResolvResponse{}, errors.New("store timestamp empty")
+	if tstamp != nil {
+		resp.Store, _ = ptypes.Timestamp(tstamp)
 	}
-	resp.Store, _ = ptypes.Timestamp(tstamp)
 	return resp, nil
 }
 

@@ -14,16 +14,40 @@ import (
 
 	pb "github.com/luids-io/api/protogen/dnsutilpb"
 	"github.com/luids-io/core/dnsutil"
+	"github.com/luids-io/core/utils/yalogi"
 )
 
 // Service provides a wrapper
 type Service struct {
+	logger  yalogi.Logger
 	checker dnsutil.ResolvChecker
 }
 
+type serviceOpts struct {
+	logger yalogi.Logger
+}
+
+var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
+
+// ServiceOption is used for service configuration
+type ServiceOption func(*serviceOpts)
+
+// SetServiceLogger option allows set a custom logger
+func SetServiceLogger(l yalogi.Logger) ServiceOption {
+	return func(o *serviceOpts) {
+		if l != nil {
+			o.logger = l
+		}
+	}
+}
+
 // NewService returns a new Service
-func NewService(c dnsutil.ResolvChecker) *Service {
-	return &Service{checker: c}
+func NewService(c dnsutil.ResolvChecker, opt ...ServiceOption) *Service {
+	opts := defaultServiceOpts
+	for _, o := range opt {
+		o(&opts)
+	}
+	return &Service{checker: c, logger: opts.logger}
 }
 
 // RegisterServer registers a service in the grpc server
@@ -36,7 +60,7 @@ func (s *Service) Check(ctx context.Context, in *pb.ResolvCheckRequest) (*pb.Res
 	//parse request
 	client, resolved, name, err := parseRequest(in)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, s.mapError(dnsutil.ErrBadRequest)
 	}
 	//do request
 	resp, err := s.checker.Check(ctx, client, resolved, name)
@@ -69,7 +93,22 @@ func parseRequest(req *pb.ResolvCheckRequest) (net.IP, net.IP, string, error) {
 	return clientIP, resolvedIP, name, nil
 }
 
-//mapping errors
+//mapping checking errors
 func (s *Service) mapError(err error) error {
-	return status.Error(codes.Unavailable, err.Error())
+	switch err {
+	case dnsutil.ErrCanceledRequest:
+		return status.Error(codes.Canceled, err.Error())
+	case dnsutil.ErrBadRequest:
+		return status.Error(codes.InvalidArgument, err.Error())
+	case dnsutil.ErrNotSupported:
+		return status.Error(codes.Unimplemented, err.Error())
+	case dnsutil.ErrUnavailable:
+		return status.Error(codes.Unavailable, err.Error())
+	case dnsutil.ErrLimitDNSClientQueries:
+		return status.Error(codes.ResourceExhausted, err.Error())
+	case dnsutil.ErrLimitResolvedNamesIP:
+		return status.Error(codes.ResourceExhausted, err.Error())
+	default:
+		return status.Error(codes.Internal, dnsutil.ErrInternal.Error())
+	}
 }

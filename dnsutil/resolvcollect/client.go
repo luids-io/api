@@ -27,7 +27,7 @@ type Client struct {
 	conn   *grpc.ClientConn
 	client pb.ResolvCollectClient
 	//control
-	started bool
+	closed bool
 }
 
 type clientOpts struct {
@@ -66,24 +66,18 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 		o(&opts)
 	}
 	return &Client{
-		opts:    opts,
-		logger:  opts.logger,
-		conn:    conn,
-		client:  pb.NewResolvCollectClient(conn),
-		started: true,
+		opts:   opts,
+		logger: opts.logger,
+		conn:   conn,
+		client: pb.NewResolvCollectClient(conn),
 	}
 }
 
 // Collect implements dnsutil.ResolvCollector interface
 func (c *Client) Collect(ctx context.Context, client net.IP, name string, resolved []net.IP) error {
-	if !c.started {
-		return errors.New("client closed")
+	if c.closed {
+		return dnsutil.ErrNotSupported
 	}
-	return c.doCollect(ctx, client, name, resolved)
-}
-
-// Collect implements dnsutil.ResolvCollector interface
-func (c *Client) doCollect(ctx context.Context, client net.IP, name string, resolved []net.IP) error {
 	rr := make([]string, 0, len(resolved))
 	for _, r := range resolved {
 		rr = append(rr, r.String())
@@ -106,31 +100,36 @@ func (c *Client) mapError(err error) error {
 	if !ok {
 		return err
 	}
-	retErr := errors.New(st.Message())
 	switch st.Code() {
+	case codes.Canceled:
+		return dnsutil.ErrCanceledRequest
 	case codes.InvalidArgument:
-		retErr = dnsutil.ErrBadRequestFormat
-	case codes.ResourceExhausted:
-		if st.Message() == dnsutil.ErrCollectDNSClientLimit.Error() {
-			retErr = dnsutil.ErrCollectDNSClientLimit
-		}
-		if st.Message() == dnsutil.ErrCollectNamesLimit.Error() {
-			retErr = dnsutil.ErrCollectNamesLimit
-		}
+		return dnsutil.ErrBadRequest
+	case codes.Unimplemented:
+		return dnsutil.ErrNotSupported
+	case codes.Internal:
+		return dnsutil.ErrInternal
 	case codes.Unavailable:
-		if st.Message() == dnsutil.ErrServiceNotAvailable.Error() {
-			retErr = dnsutil.ErrServiceNotAvailable
+		return dnsutil.ErrUnavailable
+	case codes.ResourceExhausted:
+		if st.Message() == dnsutil.ErrLimitDNSClientQueries.Error() {
+			return dnsutil.ErrLimitDNSClientQueries
 		}
+		if st.Message() == dnsutil.ErrLimitResolvedNamesIP.Error() {
+			return dnsutil.ErrLimitResolvedNamesIP
+		}
+		return dnsutil.ErrUnavailable
+	default:
+		return dnsutil.ErrUnavailable
 	}
-	return retErr
 }
 
 //Close closes the client
 func (c *Client) Close() error {
-	if !c.started {
+	if c.closed {
 		return errors.New("client closed")
 	}
-	c.started = false
+	c.closed = true
 	if c.opts.closeConn {
 		return c.conn.Close()
 	}
@@ -139,7 +138,7 @@ func (c *Client) Close() error {
 
 // Ping checks connectivity with the api
 func (c *Client) Ping() error {
-	if !c.started {
+	if c.closed {
 		return errors.New("client closed")
 	}
 	st := c.conn.GetState()
