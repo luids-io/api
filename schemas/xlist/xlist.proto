@@ -5,7 +5,7 @@ syntax = "proto3";
 import "github.com/golang/protobuf/ptypes/empty/empty.proto";
 
 package luids.xlist.v1;
-option go_package = "github.com/luids-io/api/protogen/xlistpb";
+option go_package = "github.com/luids-io/api/xlist/grpc/pb";
 
 service Check {
   rpc Check(CheckRequest) returns (CheckResponse) {}

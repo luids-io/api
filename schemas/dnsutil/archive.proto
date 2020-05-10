@@ -5,7 +5,7 @@ syntax = "proto3";
 import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
 
 package luids.dnsutil.v1;
-option go_package = "github.com/luids-io/api/protogen/dnsutilpb";
+option go_package = "github.com/luids-io/api/dnsutil/grpc/pb";
 
 service Archive {
     rpc SaveResolv (SaveResolvRequest) returns (SaveResolvResponse) {}

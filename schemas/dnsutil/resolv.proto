@@ -6,7 +6,7 @@ import "github.com/golang/protobuf/ptypes/empty/empty.proto";
 import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
 
 package luids.dnsutil.v1;
-option go_package = "github.com/luids-io/api/protogen/dnsutilpb";
+option go_package = "github.com/luids-io/api/dnsutil/grpc/pb";
 
 service ResolvCollect {
     rpc Collect (ResolvCollectRequest) returns (google.protobuf.Empty) {}

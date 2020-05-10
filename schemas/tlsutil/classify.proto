@@ -5,7 +5,7 @@ syntax = "proto3";
 import "github.com/luids-io/api/schemas/tlsutil/common.proto";
 
 package luids.tlsutil.v1;
-option go_package = "github.com/luids-io/api/protogen/tlsutilpb";
+option go_package = "github.com/luids-io/api/tlsutil/grpc/pb";
 
 service Classify {
     rpc Connections (ClassifyConnectionsRequest) returns (ClassifyConnectionsResponse) {}

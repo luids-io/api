@@ -6,7 +6,7 @@ import "github.com/luids-io/api/schemas/tlsutil/common.proto";
 import "github.com/golang/protobuf/ptypes/empty/empty.proto";
 
 package luids.tlsutil.v1;
-option go_package = "github.com/luids-io/api/protogen/tlsutilpb";
+option go_package = "github.com/luids-io/api/tlsutil/grpc/pb";
 
 service Archive {
     rpc SaveConnection (SaveConnectionRequest) returns (SaveConnectionResponse) {}
