@@ -36,9 +36,10 @@ func newRPCClient(c pb.AnalyzeClient, l gopacket.LayerType, buffSize int) *rpcCl
 	return r
 }
 
-// Data returns channel for write data
-func (r *rpcClient) Data() chan<- *pb.SendPacketRequest {
-	return r.dataCh
+// Send write request in channel
+func (r *rpcClient) Send(req *pb.SendPacketRequest) error {
+	r.dataCh <- req
+	return nil
 }
 
 func (r *rpcClient) run(wg *sync.WaitGroup, closeCh <-chan struct{}, errCh chan<- error) {
@@ -46,14 +47,14 @@ PROCESSLOOP:
 	for {
 		select {
 		case data := <-r.dataCh:
-			err := r.save(data)
+			err := r.send(data)
 			if err != nil {
 				errCh <- err
 			}
 		case <-closeCh:
 			//clean buffer
 			for data := range r.dataCh {
-				err := r.save(data)
+				err := r.send(data)
 				if err != nil {
 					errCh <- err
 				}
@@ -68,8 +69,8 @@ PROCESSLOOP:
 	wg.Done()
 }
 
-//save request, implements a reconnection system
-func (r *rpcClient) save(req *pb.SendPacketRequest) error {
+//send request, implements a reconnection system
+func (r *rpcClient) send(req *pb.SendPacketRequest) error {
 	if !r.connected {
 		err := r.connect()
 		if err != nil {
@@ -94,7 +95,7 @@ func (r *rpcClient) connect() error {
 	case layers.LayerTypeIPv6:
 		r.stream, err = r.client.SendIPv6Packets(context.Background())
 	default:
-		err = fmt.Errorf("unexpected linktype %v", r.layer)
+		err = fmt.Errorf("unexpected layer type %v", r.layer)
 	}
 	if err != nil {
 		return err

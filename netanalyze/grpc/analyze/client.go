@@ -11,8 +11,11 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/status"
 
+	"github.com/luids-io/api/netanalyze"
 	"github.com/luids-io/api/netanalyze/grpc/pb"
 	"github.com/luids-io/core/yalogi"
 )
@@ -85,47 +88,62 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 // SendEtherPacket implements capture.Analyzer interface
 func (c *Client) SendEtherPacket(data []byte, md *gopacket.PacketMetadata) error {
 	if !c.started {
-		return errors.New("client closed")
+		return netanalyze.ErrUnavailable
 	}
 	req, err := getPacketRequest(data, md, layers.LayerTypeEthernet)
 	if err != nil {
-		return err
+		return netanalyze.ErrBadRequest
 	}
-	c.rpcEth.Data() <- req
+	err = c.rpcEth.Send(req)
+	if err != nil {
+		return c.mapError(err)
+	}
 	return nil
 }
 
 // SendIPv4Packet implements capture.Analyzer interface
 func (c *Client) SendIPv4Packet(data []byte, md *gopacket.PacketMetadata) error {
 	if !c.started {
-		return errors.New("client closed")
+		return netanalyze.ErrUnavailable
 	}
 	req, err := getPacketRequest(data, md, layers.LayerTypeIPv4)
 	if err != nil {
-		return err
+		return netanalyze.ErrBadRequest
 	}
-	c.rpcIP4.Data() <- req
+	err = c.rpcIP4.Send(req)
+	if err != nil {
+		return c.mapError(err)
+	}
 	return nil
 }
 
 // SendIPv6Packet implements capture.Analyzer interface
 func (c *Client) SendIPv6Packet(data []byte, md *gopacket.PacketMetadata) error {
 	if !c.started {
-		return errors.New("client closed")
+		return netanalyze.ErrUnavailable
 	}
 	req, err := getPacketRequest(data, md, layers.LayerTypeIPv6)
 	if err != nil {
-		return err
+		return netanalyze.ErrBadRequest
 	}
-	c.rpcIP6.Data() <- req
+	err = c.rpcIP6.Send(req)
+	if err != nil {
+		return c.mapError(err)
+	}
 	return nil
 }
 
 func getPacketRequest(data []byte, md *gopacket.PacketMetadata, layer gopacket.LayerType) (*pb.SendPacketRequest, error) {
 	req := &pb.SendPacketRequest{}
 	req.Metadata = &pb.PacketMetadata{}
+	if md.Timestamp.IsZero() {
+		return nil, fmt.Errorf("invalid timestamp")
+	}
 	req.Metadata.Timestamp, _ = ptypes.TimestampProto(md.Timestamp)
 	req.Metadata.InterfaceIndex = int32(md.InterfaceIndex)
+	if len(data) == 0 {
+		return nil, fmt.Errorf("invalid data payload")
+	}
 	req.Data = data
 	return req, nil
 }
@@ -188,6 +206,26 @@ func (c *Client) Ping() error {
 		return fmt.Errorf("connection state: %v", st)
 	}
 	return nil
+}
+
+//mapping errors
+func (c *Client) mapError(err error) error {
+	st, ok := status.FromError(err)
+	if !ok {
+		return err
+	}
+	switch st.Code() {
+	case codes.InvalidArgument:
+		return netanalyze.ErrBadRequest
+	case codes.Unimplemented:
+		return netanalyze.ErrNotSupported
+	case codes.Internal:
+		return netanalyze.ErrInternal
+	case codes.Unavailable:
+		return netanalyze.ErrUnavailable
+	default:
+		return netanalyze.ErrUnavailable
+	}
 }
 
 //API returns API service name implemented

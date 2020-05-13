@@ -16,19 +16,44 @@ import (
 
 	"github.com/luids-io/api/netanalyze"
 	"github.com/luids-io/api/netanalyze/grpc/pb"
+	"github.com/luids-io/core/yalogi"
 )
 
 // Service implements a service wrapper for the grpc api
 type Service struct {
+	logger  yalogi.Logger
 	pcktsvc netanalyze.Service
 	ethproc netanalyze.Processor
 	ip4proc netanalyze.Processor
 	ip6proc netanalyze.Processor
 }
 
+type serviceOpts struct {
+	logger yalogi.Logger
+}
+
+var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
+
+// ServiceOption is used for service configuration
+type ServiceOption func(*serviceOpts)
+
+// SetServiceLogger option allows set a custom logger
+func SetServiceLogger(l yalogi.Logger) ServiceOption {
+	return func(o *serviceOpts) {
+		if l != nil {
+			o.logger = l
+		}
+	}
+}
+
 // NewService returns a new Service for the grpc api
-func NewService(p netanalyze.Service, ethproc, ip4proc, ip6proc netanalyze.Processor) *Service {
+func NewService(p netanalyze.Service, ethproc, ip4proc, ip6proc netanalyze.Processor, opt ...ServiceOption) *Service {
+	opts := defaultServiceOpts
+	for _, o := range opt {
+		o(&opts)
+	}
 	return &Service{
+		logger:  opts.logger,
 		pcktsvc: p,
 		ethproc: ethproc,
 		ip4proc: ip4proc,
@@ -43,16 +68,25 @@ func RegisterServer(server *grpc.Server, service *Service) {
 
 // SendEtherPackets manage requests
 func (s *Service) SendEtherPackets(stream pb.Analyze_SendEtherPacketsServer) error {
+	if s.ethproc == nil {
+		return status.Errorf(codes.Unavailable, netanalyze.ErrUnavailable.Error())
+	}
 	return s.sendPackets(stream, layers.LinkTypeEthernet)
 }
 
 // SendIPv4Packets manage requests
 func (s *Service) SendIPv4Packets(stream pb.Analyze_SendIPv4PacketsServer) error {
+	if s.ip4proc == nil {
+		return status.Errorf(codes.Unavailable, netanalyze.ErrUnavailable.Error())
+	}
 	return s.sendPackets(stream, layers.LinkTypeIPv4)
 }
 
 // SendIPv6Packets manage requests
 func (s *Service) SendIPv6Packets(stream pb.Analyze_SendIPv6PacketsServer) error {
+	if s.ip6proc == nil {
+		return status.Errorf(codes.Unavailable, netanalyze.ErrUnavailable.Error())
+	}
 	return s.sendPackets(stream, layers.LinkTypeIPv6)
 }
 
@@ -61,7 +95,8 @@ func (s *Service) sendPackets(stream pcktServerStream, linkType layers.LinkType)
 	ctx := stream.Context()
 	p, ok := peer.FromContext(ctx)
 	if !ok {
-		return status.Errorf(codes.Internal, "Internal error getting peer")
+		s.logger.Errorf("getting peer in sendPackets")
+		return status.Errorf(codes.Internal, netanalyze.ErrInternal.Error())
 	}
 	// creates packet source
 	name := p.Addr.String()
@@ -77,7 +112,8 @@ func (s *Service) sendPackets(stream pcktServerStream, linkType layers.LinkType)
 		name = fmt.Sprintf("%s-ip6", name)
 		proc = s.ip6proc
 	default:
-		return status.Error(codes.Internal, "invalid layer")
+		s.logger.Errorf("invalid send layer from '%s'", name)
+		return status.Errorf(codes.Internal, netanalyze.ErrInternal.Error())
 	}
 	psource := &pcktSource{
 		err:    make(chan error),
@@ -85,7 +121,8 @@ func (s *Service) sendPackets(stream pcktServerStream, linkType layers.LinkType)
 	}
 	err := s.pcktsvc.Register(name, psource, proc)
 	if err != nil {
-		return status.Errorf(codes.Internal, "Internal error registering: %v", err)
+		s.logger.Warnf("registering '%s': %v", name, err)
+		return status.Errorf(codes.Internal, netanalyze.ErrInternal.Error())
 	}
 	//waits for close or error
 	err = <-psource.err
@@ -95,12 +132,8 @@ func (s *Service) sendPackets(stream pcktServerStream, linkType layers.LinkType)
 	if err == io.EOF {
 		return nil
 	}
-	return err
-}
-
-//mapping errors
-func (s *Service) mapError(err error) error {
-	return status.Error(codes.Unavailable, err.Error())
+	s.logger.Warnf("processing '%s': %v", name, err)
+	return status.Errorf(codes.Internal, netanalyze.ErrInternal.Error())
 }
 
 type pcktSource struct {
