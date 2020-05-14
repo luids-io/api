@@ -5,14 +5,14 @@ import (
 
 	"github.com/luids-io/api/tlsutil"
 	"github.com/luids-io/api/tlsutil/grpc/pb"
-	"github.com/luids-io/api/tlsutil/layer"
+	"github.com/luisguillenc/tlslayer"
 )
 
 // RecordData convert to model RecordData
 func RecordData(src *pb.RecordData) *tlsutil.RecordData {
 	dst := &tlsutil.RecordData{}
 	dst.StreamID = src.GetStreamId()
-	dst.Type = layer.ContentType(src.GetType())
+	dst.Type = tlslayer.ContentType(src.GetType())
 	dst.Len = uint16(src.GetLen())
 	dst.Timestamp, _ = ptypes.Timestamp(src.GetTimestamp())
 	dst.Ciphered = src.GetCiphered()

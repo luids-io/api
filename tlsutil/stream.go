@@ -5,7 +5,7 @@ package tlsutil
 import (
 	"time"
 
-	"github.com/luids-io/api/tlsutil/layer"
+	"github.com/luisguillenc/tlslayer/tlsproto"
 )
 
 // StreamData stores data of tls streams
@@ -45,8 +45,8 @@ type StreamInfo struct {
 
 // HandshakeItem stores handshake metadata information
 type HandshakeItem struct {
-	Type layer.HandshakeType `json:"type"`
-	Len  uint32              `json:"len"`
+	Type tlsproto.HandshakeType `json:"type"`
+	Len  uint32                 `json:"len"`
 }
 
 // PlaintextSummary stores summary of plaintext traffic

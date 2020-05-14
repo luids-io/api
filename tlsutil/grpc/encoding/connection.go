@@ -7,7 +7,8 @@ import (
 
 	"github.com/luids-io/api/tlsutil"
 	"github.com/luids-io/api/tlsutil/grpc/pb"
-	"github.com/luids-io/api/tlsutil/layer"
+	"github.com/luisguillenc/tlslayer"
+	"github.com/luisguillenc/tlslayer/tlsproto"
 )
 
 // ConnectionData convert to model connectiondata
@@ -153,7 +154,7 @@ func StreamData(src *pb.ConnectionData_StreamData) *tlsutil.StreamData {
 			dst.HandshakeSeq = append(dst.HandshakeSeq,
 				tlsutil.HandshakeItem{
 					Len:  hsk.GetLen(),
-					Type: layer.HandshakeType(hsk.GetHtype()),
+					Type: tlsproto.HandshakeType(hsk.GetHtype()),
 				})
 		}
 	}
@@ -299,23 +300,23 @@ func CiphertextSummaryPB(src *tlsutil.CiphertextSummary) *pb.ConnectionData_Stre
 // ClientHelloData convert to model ClientHelloData
 func ClientHelloData(src *pb.ConnectionData_ClientHelloData) *tlsutil.ClientHelloData {
 	dst := &tlsutil.ClientHelloData{}
-	dst.ClientVersion = layer.ProtocolVersion(src.GetClientVersion())
+	dst.ClientVersion = tlslayer.ProtocolVersion(src.GetClientVersion())
 	dst.RandomLen = int(src.GetRandomLen())
 	dst.SessionIDLen = int(src.GetSessionIdLen())
 	dst.SessionID = src.GetSessionId()
 	dst.CipherSuitesLen = int(src.GetCipherSuitesLen())
 	suites := src.GetCipherSuites()
 	if len(suites) > 0 {
-		dst.CipherSuites = make([]layer.CipherSuite, 0, len(suites))
+		dst.CipherSuites = make([]tlsproto.CipherSuite, 0, len(suites))
 		for _, s := range suites {
-			dst.CipherSuites = append(dst.CipherSuites, layer.CipherSuite(s))
+			dst.CipherSuites = append(dst.CipherSuites, tlsproto.CipherSuite(s))
 		}
 	}
 	comp := src.GetCompressMethods()
 	if len(comp) > 0 {
-		dst.CompressMethods = make([]layer.CompressionMethod, 0, len(comp))
+		dst.CompressMethods = make([]tlsproto.CompressionMethod, 0, len(comp))
 		for _, c := range comp {
-			dst.CompressMethods = append(dst.CompressMethods, layer.CompressionMethod(c))
+			dst.CompressMethods = append(dst.CompressMethods, tlsproto.CompressionMethod(c))
 		}
 	}
 	dst.ExtensionLen = int(src.GetExtensionLen())
@@ -326,7 +327,7 @@ func ClientHelloData(src *pb.ConnectionData_ClientHelloData) *tlsutil.ClientHell
 			dst.Extensions = append(dst.Extensions,
 				tlsutil.ExtensionItem{
 					Len:  uint16(e.GetLen()),
-					Type: layer.ExtensionType(e.GetEtype()),
+					Type: tlsproto.ExtensionType(e.GetEtype()),
 				})
 		}
 	}
@@ -385,12 +386,12 @@ func ClientHelloDataPB(src *tlsutil.ClientHelloData) *pb.ConnectionData_ClientHe
 // ServerHelloData convert to model ServerHelloData
 func ServerHelloData(src *pb.ConnectionData_ServerHelloData) *tlsutil.ServerHelloData {
 	dst := &tlsutil.ServerHelloData{}
-	dst.ServerVersion = layer.ProtocolVersion(src.GetServerVersion())
+	dst.ServerVersion = tlslayer.ProtocolVersion(src.GetServerVersion())
 	dst.RandomLen = int(src.GetRandomLen())
 	dst.SessionIDLen = int(src.GetSessionIdLen())
 	dst.SessionID = src.GetSessionId()
-	dst.CipherSuiteSel = layer.CipherSuite(src.GetCipherSuiteSel())
-	dst.CompressMethodSel = layer.CompressionMethod(src.GetCompressMethodSel())
+	dst.CipherSuiteSel = tlsproto.CipherSuite(src.GetCipherSuiteSel())
+	dst.CompressMethodSel = tlsproto.CompressionMethod(src.GetCompressMethodSel())
 	dst.ExtensionLen = int(src.GetExtensionLen())
 	exts := src.GetExtensions()
 	if len(exts) > 0 {
@@ -399,7 +400,7 @@ func ServerHelloData(src *pb.ConnectionData_ServerHelloData) *tlsutil.ServerHell
 			dst.Extensions = append(dst.Extensions,
 				tlsutil.ExtensionItem{
 					Len:  uint16(e.GetLen()),
-					Type: layer.ExtensionType(e.GetEtype()),
+					Type: tlsproto.ExtensionType(e.GetEtype()),
 				})
 		}
 	}
@@ -443,30 +444,30 @@ func DecodedInfo(src *pb.ConnectionData_DecodedInfo) *tlsutil.DecodedInfo {
 	dst.SNI = src.GetSni()
 	schemes := src.GetSignatureSchemes()
 	if len(schemes) > 0 {
-		dst.SignatureSchemes = make([]layer.SignatureScheme, 0, len(schemes))
+		dst.SignatureSchemes = make([]tlsproto.SignatureScheme, 0, len(schemes))
 		for _, s := range src.SignatureSchemes {
-			dst.SignatureSchemes = append(dst.SignatureSchemes, layer.SignatureScheme(s))
+			dst.SignatureSchemes = append(dst.SignatureSchemes, tlsproto.SignatureScheme(s))
 		}
 	}
 	versions := src.GetSupportedVersions()
 	if len(versions) > 0 {
-		dst.SupportedVersions = make([]layer.SupportedVersion, 0, len(versions))
+		dst.SupportedVersions = make([]tlsproto.SupportedVersion, 0, len(versions))
 		for _, s := range versions {
-			dst.SupportedVersions = append(dst.SupportedVersions, layer.SupportedVersion(s))
+			dst.SupportedVersions = append(dst.SupportedVersions, tlsproto.SupportedVersion(s))
 		}
 	}
 	groups := src.GetSupportedGroups()
 	if len(groups) > 0 {
-		dst.SupportedGroups = make([]layer.SupportedGroup, 0, len(groups))
+		dst.SupportedGroups = make([]tlsproto.SupportedGroup, 0, len(groups))
 		for _, s := range groups {
-			dst.SupportedGroups = append(dst.SupportedGroups, layer.SupportedGroup(s))
+			dst.SupportedGroups = append(dst.SupportedGroups, tlsproto.SupportedGroup(s))
 		}
 	}
 	ecpoints := src.GetEcPointFormats()
 	if len(ecpoints) > 0 {
-		dst.ECPointFormats = make([]layer.ECPointFormat, 0, len(ecpoints))
+		dst.ECPointFormats = make([]tlsproto.ECPointFormat, 0, len(ecpoints))
 		for _, s := range ecpoints {
-			dst.ECPointFormats = append(dst.ECPointFormats, layer.ECPointFormat(s))
+			dst.ECPointFormats = append(dst.ECPointFormats, tlsproto.ECPointFormat(s))
 		}
 	}
 	dst.OSCP = src.GetOscp()
