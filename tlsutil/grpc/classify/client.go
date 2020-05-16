@@ -8,7 +8,9 @@ import (
 	"fmt"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/status"
 
 	"github.com/luids-io/api/tlsutil"
 	"github.com/luids-io/api/tlsutil/grpc/encoding"
@@ -24,7 +26,7 @@ type Client struct {
 	conn   *grpc.ClientConn
 	client pb.ClassifyClient
 	//control
-	started bool
+	closed bool
 }
 
 type clientOpts struct {
@@ -76,14 +78,17 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 		conn:   conn,
 		client: pb.NewClassifyClient(conn),
 	}
-	c.started = true
 	return c
 }
 
 // ClassifyConnections implements tlsutil.Classifier
 func (c *Client) ClassifyConnections(ctx context.Context, requests []*tlsutil.ConnectionData) ([]tlsutil.ClassifyResponse, error) {
-	if !c.started {
-		return nil, errors.New("client closed")
+	if c.closed {
+		return nil, tlsutil.ErrUnavailable
+	}
+	if len(requests) == 0 {
+		c.logger.Warnf("classify request: requests len can't be empty")
+		return nil, tlsutil.ErrBadRequest
 	}
 	// prepare requests
 	sendRequests := make([]*pb.ConnectionData, 0, len(requests))
@@ -93,10 +98,11 @@ func (c *Client) ClassifyConnections(ctx context.Context, requests []*tlsutil.Co
 	// do classify
 	pbres, err := c.client.Connections(ctx, &pb.ClassifyConnectionsRequest{Connections: sendRequests})
 	if err != nil {
-		return nil, err
+		return nil, c.mapError(err)
 	}
 	if len(requests) != len(pbres.Responses) {
-		return nil, errors.New("requests len and responses len missmatch")
+		c.logger.Warnf("classify request: requests len and responses len missmatch")
+		return nil, tlsutil.ErrInternal
 	}
 	// reencode responses
 	responses := make([]tlsutil.ClassifyResponse, 0, len(pbres.Responses))
@@ -121,10 +127,10 @@ func (c *Client) ClassifyConnections(ctx context.Context, requests []*tlsutil.Co
 
 //Close closes the client
 func (c *Client) Close() error {
-	if !c.started {
+	if c.closed {
 		return errors.New("client closed")
 	}
-	c.started = false
+	c.closed = true
 	if c.opts.closeConn {
 		return c.conn.Close()
 	}
@@ -133,7 +139,7 @@ func (c *Client) Close() error {
 
 // Ping checks connectivity with the api
 func (c *Client) Ping() error {
-	if !c.started {
+	if c.closed {
 		return errors.New("client closed")
 	}
 	st := c.conn.GetState()
@@ -149,4 +155,24 @@ func (c *Client) Ping() error {
 //API returns API service name implemented
 func (c *Client) API() string {
 	return ServiceName()
+}
+
+//mapping errors
+func (c *Client) mapError(err error) error {
+	st, ok := status.FromError(err)
+	if !ok {
+		return err
+	}
+	switch st.Code() {
+	case codes.InvalidArgument:
+		return tlsutil.ErrBadRequest
+	case codes.Unimplemented:
+		return tlsutil.ErrNotSupported
+	case codes.Internal:
+		return tlsutil.ErrInternal
+	case codes.Unavailable:
+		return tlsutil.ErrUnavailable
+	default:
+		return tlsutil.ErrUnavailable
+	}
 }

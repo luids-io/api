@@ -8,7 +8,9 @@ import (
 	"sync"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/status"
 
 	"github.com/luids-io/api/tlsutil"
 	"github.com/luids-io/api/tlsutil/grpc/encoding"
@@ -82,9 +84,12 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 // SendMessage implements capture.Analyzer interface
 func (c *Client) SendMessage(msg *tlsutil.Msg) error {
 	if !c.started {
-		return errors.New("client not started")
+		return tlsutil.ErrUnavailable
 	}
-	c.rpc.Data() <- encoding.MessageRequestPB(msg)
+	err := c.rpc.Send(encoding.MessageRequestPB(msg))
+	if err != nil {
+		return c.mapError(err)
+	}
 	return nil
 }
 
@@ -138,6 +143,30 @@ func (c *Client) Ping() error {
 		return fmt.Errorf("connection state: %v", st)
 	}
 	return nil
+}
+
+//mapping errors
+func (c *Client) mapError(err error) error {
+	st, ok := status.FromError(err)
+	if !ok {
+		return err
+	}
+	switch st.Code() {
+	case codes.InvalidArgument:
+		return tlsutil.ErrBadRequest
+	case codes.Unimplemented:
+		return tlsutil.ErrNotSupported
+	case codes.AlreadyExists:
+		return tlsutil.ErrDuplicatedStream
+	case codes.FailedPrecondition:
+		return tlsutil.ErrStreamNotFound
+	case codes.Internal:
+		return tlsutil.ErrInternal
+	case codes.Unavailable:
+		return tlsutil.ErrUnavailable
+	default:
+		return tlsutil.ErrUnavailable
+	}
 }
 
 //API returns API service name implemented

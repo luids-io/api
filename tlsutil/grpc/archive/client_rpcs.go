@@ -26,8 +26,9 @@ func newRPCrecord(c pb.ArchiveClient, buffSize int) *rpcRecord {
 }
 
 // Data returns channel for write data
-func (r *rpcRecord) Data() chan<- *pb.SaveRecordRequest {
-	return r.dataCh
+func (r *rpcRecord) Save(req *pb.SaveRecordRequest) error {
+	r.dataCh <- req
+	return nil
 }
 
 func (r *rpcRecord) run(wg *sync.WaitGroup, closeCh <-chan struct{}, errCh chan<- error) {

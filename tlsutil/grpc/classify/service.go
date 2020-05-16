@@ -7,25 +7,29 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
 	"github.com/luids-io/api/tlsutil"
 	"github.com/luids-io/api/tlsutil/grpc/encoding"
 	"github.com/luids-io/api/tlsutil/grpc/pb"
+	"github.com/luids-io/core/yalogi"
 )
 
 // Service provides a grpc wrapper
 type Service struct {
 	opts       serviceOpts
+	logger     yalogi.Logger
 	classifier tlsutil.Classifier
 }
 
 type serviceOpts struct {
+	logger        yalogi.Logger
 	disclosureErr bool
 	dataBuff      int
 }
 
-var defaultServiceOpts = serviceOpts{dataBuff: 100}
+var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull, dataBuff: 100}
 
 // ServiceOption is used for service configuration
 type ServiceOption func(*serviceOpts)
@@ -44,13 +48,22 @@ func SetDataBuff(i int) ServiceOption {
 	}
 }
 
+// SetServiceLogger option allows set a custom logger
+func SetServiceLogger(l yalogi.Logger) ServiceOption {
+	return func(o *serviceOpts) {
+		if l != nil {
+			o.logger = l
+		}
+	}
+}
+
 // NewService returns a new Service for the cheker
 func NewService(c tlsutil.Classifier, opt ...ServiceOption) *Service {
 	opts := defaultServiceOpts
 	for _, o := range opt {
 		o(&opts)
 	}
-	return &Service{classifier: c, opts: opts}
+	return &Service{classifier: c, logger: opts.logger, opts: opts}
 }
 
 // RegisterServer registers a service in the grpc server
@@ -60,10 +73,11 @@ func RegisterServer(server *grpc.Server, service *Service) {
 
 // Connections implements grpc interface
 func (s *Service) Connections(ctx context.Context, in *pb.ClassifyConnectionsRequest) (*pb.ClassifyConnectionsResponse, error) {
+	paddr := getPeerAddr(ctx)
 	// prepare request
 	if len(in.GetConnections()) == 0 {
-		rpcerr := status.Error(codes.InvalidArgument, "connections is empty")
-		return nil, rpcerr
+		s.logger.Warnf("invalid request from '%s': connection is empty", paddr)
+		return nil, s.mapError(tlsutil.ErrBadRequest)
 	}
 	requests := make([]*tlsutil.ConnectionData, 0, len(in.GetConnections()))
 	for _, r := range in.GetConnections() {
@@ -73,6 +87,7 @@ func (s *Service) Connections(ctx context.Context, in *pb.ClassifyConnectionsReq
 	// do request
 	responses, err := s.classifier.ClassifyConnections(ctx, requests)
 	if err != nil {
+		s.logger.Warnf("classify from '%s': %v", paddr, err)
 		return nil, s.mapError(err)
 	}
 	// create response
@@ -97,10 +112,24 @@ func (s *Service) Connections(ctx context.Context, in *pb.ClassifyConnectionsReq
 
 //mapping errors
 func (s *Service) mapError(err error) error {
-	//TODO
-	rpcerr := status.Error(codes.Unavailable, "service not available")
-	if s.opts.disclosureErr {
-		rpcerr = status.Error(codes.Unavailable, err.Error())
+	switch err {
+	case tlsutil.ErrCanceledRequest:
+		return status.Error(codes.Canceled, err.Error())
+	case tlsutil.ErrBadRequest:
+		return status.Error(codes.InvalidArgument, err.Error())
+	case tlsutil.ErrNotSupported:
+		return status.Error(codes.Unimplemented, err.Error())
+	case tlsutil.ErrUnavailable:
+		return status.Error(codes.Unavailable, err.Error())
+	default:
+		return status.Error(codes.Internal, tlsutil.ErrInternal.Error())
 	}
-	return rpcerr
+}
+
+func getPeerAddr(ctx context.Context) (paddr string) {
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		paddr = p.Addr.String()
+	}
+	return
 }

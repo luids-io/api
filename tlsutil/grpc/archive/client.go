@@ -9,7 +9,9 @@ import (
 	"sync"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/status"
 
 	"github.com/luids-io/api/tlsutil"
 	"github.com/luids-io/api/tlsutil/grpc/pb"
@@ -82,7 +84,7 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 // SaveConnection implements tlsutil.Archiver interface
 func (c *Client) SaveConnection(ctx context.Context, data *tlsutil.ConnectionData) (string, error) {
 	if !c.started {
-		return "", errors.New("client closed")
+		return "", tlsutil.ErrUnavailable
 	}
 	req, err := connectionToRequest(data)
 	if err != nil {
@@ -98,7 +100,7 @@ func (c *Client) SaveConnection(ctx context.Context, data *tlsutil.ConnectionDat
 // SaveCertificate implements tlsutil.Archiver interface
 func (c *Client) SaveCertificate(ctx context.Context, data *tlsutil.CertificateData) (string, error) {
 	if !c.started {
-		return "", errors.New("client closed")
+		return "", tlsutil.ErrUnavailable
 	}
 	req, err := certificateToRequest(data)
 	if err != nil {
@@ -114,12 +116,10 @@ func (c *Client) SaveCertificate(ctx context.Context, data *tlsutil.CertificateD
 // StoreRecord implements tlsutil.Archiver interface
 func (c *Client) StoreRecord(data *tlsutil.RecordData) error {
 	if !c.started {
-		return errors.New("client closed")
+		return tlsutil.ErrUnavailable
 	}
 	req := recordToRequest(data)
-	//TODO: check errs
-	c.recordRPC.Data() <- req
-	return nil
+	return c.recordRPC.Save(req)
 }
 
 func (c *Client) start() {
@@ -159,12 +159,6 @@ func (c *Client) Close() error {
 	return nil
 }
 
-//mapping errors routine
-func (c *Client) mapError(err error) error {
-	//TODO
-	return err
-}
-
 // Ping checks connectivity with the api
 func (c *Client) Ping() error {
 	if !c.started {
@@ -183,4 +177,24 @@ func (c *Client) Ping() error {
 //API returns API service name implemented
 func (c *Client) API() string {
 	return ServiceName()
+}
+
+//mapping errors
+func (c *Client) mapError(err error) error {
+	st, ok := status.FromError(err)
+	if !ok {
+		return err
+	}
+	switch st.Code() {
+	case codes.InvalidArgument:
+		return tlsutil.ErrBadRequest
+	case codes.Unimplemented:
+		return tlsutil.ErrNotSupported
+	case codes.Internal:
+		return tlsutil.ErrInternal
+	case codes.Unavailable:
+		return tlsutil.ErrUnavailable
+	default:
+		return tlsutil.ErrUnavailable
+	}
 }

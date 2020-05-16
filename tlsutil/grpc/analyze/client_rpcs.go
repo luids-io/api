@@ -32,9 +32,10 @@ func newRPCClient(c pb.AnalyzeClient, buffSize int) *rpcClient {
 	return r
 }
 
-// Data returns channel for write data
-func (r *rpcClient) Data() chan<- *pb.SendMessageRequest {
-	return r.dataCh
+// Send write request in channel
+func (r *rpcClient) Send(req *pb.SendMessageRequest) error {
+	r.dataCh <- req
+	return nil
 }
 
 func (r *rpcClient) run(wg *sync.WaitGroup, closeCh <-chan struct{}, errCh chan<- error) {
