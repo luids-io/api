@@ -217,6 +217,8 @@ func (c *Client) mapError(err error) error {
 	switch st.Code() {
 	case codes.InvalidArgument:
 		return netanalyze.ErrBadRequest
+	case codes.OutOfRange:
+		return netanalyze.ErrTimeOutOfSync
 	case codes.Unimplemented:
 		return netanalyze.ErrNotSupported
 	case codes.Internal:

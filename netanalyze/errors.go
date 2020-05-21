@@ -11,10 +11,11 @@ import (
 
 // Some standard errors returned by API funcs
 var (
-	ErrBadRequest   = errors.New("bad request")
-	ErrNotSupported = errors.New("resource not supported")
-	ErrUnavailable  = errors.New("not available")
-	ErrInternal     = errors.New("internal error")
+	ErrBadRequest    = errors.New("bad request")
+	ErrNotSupported  = errors.New("resource not supported")
+	ErrUnavailable   = errors.New("not available")
+	ErrInternal      = errors.New("internal error")
+	ErrTimeOutOfSync = errors.New("time out of sync")
 )
 
 // ErrorsBuffer sets the default size for error channels

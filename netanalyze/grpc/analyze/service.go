@@ -5,6 +5,7 @@ package analyze
 import (
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/google/gopacket"
@@ -21,15 +22,17 @@ import (
 
 // Service implements a service wrapper for the grpc api
 type Service struct {
-	logger  yalogi.Logger
-	pcktsvc netanalyze.Service
-	ethproc netanalyze.Processor
-	ip4proc netanalyze.Processor
-	ip6proc netanalyze.Processor
+	logger     yalogi.Logger
+	expiration time.Duration
+	pcktsvc    netanalyze.Service
+	ethproc    netanalyze.Processor
+	ip4proc    netanalyze.Processor
+	ip6proc    netanalyze.Processor
 }
 
 type serviceOpts struct {
-	logger yalogi.Logger
+	logger     yalogi.Logger
+	expiration time.Duration
 }
 
 var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
@@ -46,6 +49,15 @@ func SetServiceLogger(l yalogi.Logger) ServiceOption {
 	}
 }
 
+// SetPacketExpiration option allows set a custom logger
+func SetPacketExpiration(d time.Duration) ServiceOption {
+	return func(o *serviceOpts) {
+		if d > 0 {
+			o.expiration = d
+		}
+	}
+}
+
 // NewService returns a new Service for the grpc api
 func NewService(p netanalyze.Service, ethproc, ip4proc, ip6proc netanalyze.Processor, opt ...ServiceOption) *Service {
 	opts := defaultServiceOpts
@@ -53,11 +65,12 @@ func NewService(p netanalyze.Service, ethproc, ip4proc, ip6proc netanalyze.Proce
 		o(&opts)
 	}
 	return &Service{
-		logger:  opts.logger,
-		pcktsvc: p,
-		ethproc: ethproc,
-		ip4proc: ip4proc,
-		ip6proc: ip6proc,
+		logger:     opts.logger,
+		expiration: opts.expiration,
+		pcktsvc:    p,
+		ethproc:    ethproc,
+		ip4proc:    ip4proc,
+		ip6proc:    ip6proc,
 	}
 }
 
@@ -95,7 +108,7 @@ func (s *Service) sendPackets(stream pcktServerStream, linkType layers.LinkType)
 	ctx := stream.Context()
 	p, ok := peer.FromContext(ctx)
 	if !ok {
-		s.logger.Errorf("getting peer in sendPackets")
+		s.logger.Errorf("can't get peer address")
 		return status.Errorf(codes.Internal, netanalyze.ErrInternal.Error())
 	}
 	// creates packet source
@@ -116,8 +129,9 @@ func (s *Service) sendPackets(stream pcktServerStream, linkType layers.LinkType)
 		return status.Errorf(codes.Internal, netanalyze.ErrInternal.Error())
 	}
 	psource := &pcktSource{
-		err:    make(chan error),
-		stream: stream,
+		expiration: s.expiration,
+		err:        make(chan error),
+		stream:     stream,
 	}
 	err := s.pcktsvc.Register(name, psource, proc)
 	if err != nil {
@@ -133,13 +147,17 @@ func (s *Service) sendPackets(stream pcktServerStream, linkType layers.LinkType)
 		return nil
 	}
 	s.logger.Warnf("processing '%s': %v", name, err)
+	if err == netanalyze.ErrTimeOutOfSync {
+		return status.Errorf(codes.OutOfRange, netanalyze.ErrTimeOutOfSync.Error())
+	}
 	return status.Errorf(codes.Internal, netanalyze.ErrInternal.Error())
 }
 
 type pcktSource struct {
-	stream pcktServerStream
-	err    chan error
-	closed bool
+	expiration time.Duration
+	stream     pcktServerStream
+	err        chan error
+	closed     bool
 }
 
 type pcktServerStream interface {
@@ -160,9 +178,26 @@ func (p *pcktSource) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err
 		return
 	}
 	meta := req.GetMetadata()
-	ts := meta.GetTimestamp()
 	data = req.GetData()
-	ci.Timestamp, _ = ptypes.Timestamp(ts)
+	// check timestamp
+	now := time.Now()
+	ts, _ := ptypes.Timestamp(meta.GetTimestamp())
+	if p.expiration > 0 {
+		if ts.After(now) {
+			if ts.Sub(now) > p.expiration {
+				p.closed = true
+				p.err <- netanalyze.ErrTimeOutOfSync
+				return
+			}
+		} else {
+			if now.Sub(ts) > p.expiration {
+				p.closed = true
+				p.err <- netanalyze.ErrTimeOutOfSync
+				return
+			}
+		}
+	}
+	ci.Timestamp = ts
 	ci.InterfaceIndex = int(meta.GetInterfaceIndex())
 	ci.CaptureLength = len(data)
 	ci.Length = len(data)
