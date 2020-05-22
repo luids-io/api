@@ -154,6 +154,8 @@ func (c *Client) mapError(err error) error {
 	switch st.Code() {
 	case codes.InvalidArgument:
 		return tlsutil.ErrBadRequest
+	case codes.OutOfRange:
+		return tlsutil.ErrTimeOutOfSync
 	case codes.Unimplemented:
 		return tlsutil.ErrNotSupported
 	case codes.AlreadyExists:

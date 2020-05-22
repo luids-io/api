@@ -5,6 +5,7 @@ package analyze
 import (
 	"context"
 	"io"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -19,12 +20,14 @@ import (
 
 // Service implements a service wrapper for the grpc api
 type Service struct {
-	logger  yalogi.Logger
-	factory tlsutil.AnalyzerFactory
+	logger     yalogi.Logger
+	expiration time.Duration
+	factory    tlsutil.AnalyzerFactory
 }
 
 type serviceOpts struct {
-	logger yalogi.Logger
+	logger     yalogi.Logger
+	expiration time.Duration
 }
 
 var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
@@ -41,13 +44,22 @@ func SetServiceLogger(l yalogi.Logger) ServiceOption {
 	}
 }
 
+// SetPacketExpiration option allows set a custom logger
+func SetPacketExpiration(d time.Duration) ServiceOption {
+	return func(o *serviceOpts) {
+		if d > 0 {
+			o.expiration = d
+		}
+	}
+}
+
 // NewService returns a new Service for the grpc api
 func NewService(f tlsutil.AnalyzerFactory, opt ...ServiceOption) *Service {
 	opts := defaultServiceOpts
 	for _, o := range opt {
 		o(&opts)
 	}
-	return &Service{factory: f, logger: opts.logger}
+	return &Service{factory: f, logger: opts.logger, expiration: opts.expiration}
 }
 
 // RegisterServer registers a service in the grpc server
@@ -77,6 +89,25 @@ func (s *Service) SendMessages(stream pb.Analyze_SendMessagesServer) error {
 			return err
 		}
 		msg := encoding.MessageRequest(req)
+		// check timestamp
+		if msg.Data != nil {
+			now := time.Now()
+			ts := msg.Data.Timestamp
+			if s.expiration > 0 {
+				if ts.After(now) {
+					if ts.Sub(now) > s.expiration {
+						s.logger.Warnf("receiving from '%s': out of sync", paddr)
+						return s.mapError(tlsutil.ErrTimeOutOfSync)
+					}
+				} else {
+					if now.Sub(ts) > s.expiration {
+						s.logger.Warnf("receiving from '%s': out of sync", paddr)
+						return s.mapError(tlsutil.ErrTimeOutOfSync)
+					}
+				}
+			}
+		}
+		// send message
 		err = analyzer.SendMessage(msg)
 		if err != nil {
 			s.logger.Warnf("analyzing from '%s' msg=[%v]: %v", paddr, msg, err)
@@ -94,6 +125,8 @@ func (s *Service) mapError(err error) error {
 		return status.Error(codes.Canceled, err.Error())
 	case tlsutil.ErrBadRequest:
 		return status.Error(codes.InvalidArgument, err.Error())
+	case tlsutil.ErrTimeOutOfSync:
+		return status.Error(codes.OutOfRange, err.Error())
 	case tlsutil.ErrNotSupported:
 		return status.Error(codes.Unimplemented, err.Error())
 	case tlsutil.ErrUnavailable:
