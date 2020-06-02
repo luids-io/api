@@ -1,0 +1,66 @@
+// Copyright 2020 Luis Guillén Civera <luisguillenc@gmail.com>. View LICENSE.
+
+syntax = "proto3";
+
+import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
+
+package luids.tlsutil.v1;
+option go_package = "github.com/luids-io/api/tlsutil/grpc/pb";
+
+service Notary {
+    rpc GetServerChain (GetServerChainRequest) returns (GetServerChainResponse) {}
+    rpc VerifyChain (VerifyChainRequest) returns (VerifyChainResponse) {}
+    rpc DownloadCerts (DownloadCertsRequest) returns (DownloadCertsResponse) {}
+
+    rpc SetServerChain (SetServerChainRequest) returns (SetServerChainResponse) {}
+    rpc UploadCerts (UploadCertsRequest) returns (UploadCertsResponse) {}
+}
+
+message GetServerChainRequest {
+    string ip      = 1;
+    int32 port     = 2;
+    string sni     = 3;
+    string profile = 4;
+}
+
+message GetServerChainResponse {
+    string chain = 1;
+}
+
+message SetServerChainRequest {
+    string ip      = 1;
+    int32 port     = 2;
+    string sni     = 3;
+    string profile = 4;
+    string chain   = 5;
+}
+
+message SetServerChainResponse {}
+
+message VerifyChainRequest {
+    string chain   = 1;
+    string dnsname = 2;
+    bool force     = 3;
+}
+
+message VerifyChainResponse {
+    google.protobuf.Timestamp ts = 1;
+    bool invalid  = 2;
+    string reason = 3;
+}
+
+message UploadCertsRequest {
+    repeated bytes certs = 1;
+}
+
+message UploadCertsResponse {
+    string chain   = 1;
+}
+
+message DownloadCertsRequest {
+    string chain   = 1;
+}
+
+message DownloadCertsResponse {
+    repeated bytes certs = 1;
+}
