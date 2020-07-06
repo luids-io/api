@@ -2,8 +2,6 @@
 
 syntax = "proto3";
 
-import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
-
 package luids.tlsutil.v1;
 option go_package = "github.com/luids-io/api/tlsutil/grpc/pb";
 
@@ -44,9 +42,9 @@ message VerifyChainRequest {
 }
 
 message VerifyChainResponse {
-    google.protobuf.Timestamp ts = 1;
-    bool invalid  = 2;
-    string reason = 3;
+    bool invalid  = 1;
+    string reason = 2;
+    int32 TTL = 3 ;
 }
 
 message UploadCertsRequest {

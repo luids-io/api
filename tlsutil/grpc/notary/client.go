@@ -15,7 +15,6 @@ import (
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/status"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/luids-io/api/tlsutil"
 	"github.com/luids-io/api/tlsutil/grpc/pb"
 	"github.com/luids-io/core/yalogi"
@@ -42,9 +41,9 @@ type clientOpts struct {
 	closeConn bool
 	debugreq  bool
 	//cache opts
-	useCache     bool
-	ttl          time.Duration
-	cacheCleanup time.Duration
+	useCache         bool
+	ttl, negativettl int
+	cacheCleanup     time.Duration
 }
 
 var defaultClientOpts = clientOpts{
@@ -79,11 +78,12 @@ func SetLogger(l yalogi.Logger) ClientOption {
 	}
 }
 
-// SetCache sets cache ttl
-func SetCache(ttl time.Duration) ClientOption {
+// SetCache sets cache ttl and negative ttl (for validations)
+func SetCache(ttl, negativettl int) ClientOption {
 	return func(o *clientOpts) {
 		if ttl > 0 {
 			o.ttl = ttl
+			o.negativettl = negativettl
 			o.useCache = true
 		}
 	}
@@ -102,9 +102,9 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 		client: pb.NewNotaryClient(conn),
 	}
 	if c.opts.useCache {
-		c.scache = newServerChainCache(c.opts.ttl, defaultCacheCleanups)
+		c.scache = newServerChainCache(c.opts.ttl, c.opts.cacheCleanup)
 		c.ucache = newUploadCache(c.opts.ttl, c.opts.cacheCleanup)
-		c.vcache = newVerifyCache(c.opts.ttl, c.opts.cacheCleanup)
+		c.vcache = newVerifyCache(c.opts.ttl, c.opts.negativettl, c.opts.cacheCleanup)
 		c.dcache = newDownloadCache(c.opts.ttl, c.opts.cacheCleanup)
 	}
 	return c
@@ -192,14 +192,13 @@ func (c *Client) VerifyChain(ctx context.Context, chain string, dnsname string, 
 		return tlsutil.VerifyResponse{}, c.mapError(err)
 	}
 	//get response
-	tstamp, _ := ptypes.Timestamp(res.GetTs())
 	vr := tlsutil.VerifyResponse{
-		Timestamp: tstamp,
-		Invalid:   res.GetInvalid(),
-		Reason:    res.GetReason(),
+		Invalid: res.GetInvalid(),
+		Reason:  res.GetReason(),
+		TTL:     int(res.GetTTL()),
 	}
 	if c.opts.useCache {
-		c.vcache.set(chain, dnsname, vr)
+		vr = c.vcache.set(chain, dnsname, vr)
 	}
 	return vr, nil
 }

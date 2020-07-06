@@ -20,8 +20,8 @@ type serverChainCache struct {
 	cache *cacheimpl.Cache
 }
 
-func newServerChainCache(ttl, cleanup time.Duration) *serverChainCache {
-	return &serverChainCache{cache: cacheimpl.New(ttl, cleanup)}
+func newServerChainCache(ttl int, cleanup time.Duration) *serverChainCache {
+	return &serverChainCache{cache: cacheimpl.New(time.Duration(ttl)*time.Second, cleanup)}
 }
 
 func (s *serverChainCache) get(ip net.IP, port int, sni string, profile string) (string, bool) {
@@ -42,8 +42,8 @@ type uploadCache struct {
 	cache *cacheimpl.Cache
 }
 
-func newUploadCache(ttl, cleanup time.Duration) *uploadCache {
-	return &uploadCache{cache: cacheimpl.New(ttl, cleanup)}
+func newUploadCache(ttl int, cleanup time.Duration) *uploadCache {
+	return &uploadCache{cache: cacheimpl.New(time.Duration(ttl)*time.Second, cleanup)}
 }
 
 // returns digest and key computed for cache
@@ -61,33 +61,62 @@ func (u *uploadCache) set(key, chain string) {
 }
 
 type verifyCache struct {
-	cache *cacheimpl.Cache
+	ttl, negativettl int
+	cache            *cacheimpl.Cache
 }
 
-func newVerifyCache(ttl, cleanup time.Duration) *verifyCache {
-	return &verifyCache{cache: cacheimpl.New(ttl, cleanup)}
+func newVerifyCache(ttl, negativettl int, cleanup time.Duration) *verifyCache {
+	return &verifyCache{
+		ttl:         ttl,
+		negativettl: negativettl,
+		cache:       cacheimpl.New(time.Duration(ttl)*time.Second, cleanup),
+	}
 }
 
 func (v *verifyCache) get(chain string, dnsname string) (tlsutil.VerifyResponse, bool) {
 	key := fmt.Sprintf("%s_%s", chain, dnsname)
-	item, ok := v.cache.Get(key)
+	hit, exp, ok := v.cache.GetWithExpiration(key)
 	if ok {
-		return item.(tlsutil.VerifyResponse), true
+		r := hit.(tlsutil.VerifyResponse)
+		if r.TTL >= 0 {
+			//updates ttl
+			ttl := exp.Sub(time.Now()).Seconds()
+			if ttl < 0 { //nonsense
+				panic("cache missfunction")
+			}
+			r.TTL = int(ttl)
+		}
+		return r, true
 	}
 	return tlsutil.VerifyResponse{}, false
 }
 
-func (v *verifyCache) set(chain string, dnsname string, response tlsutil.VerifyResponse) {
-	key := fmt.Sprintf("%s_%s", chain, dnsname)
-	v.cache.Set(key, response, 0)
+func (v *verifyCache) set(chain string, dnsname string, r tlsutil.VerifyResponse) tlsutil.VerifyResponse {
+	//if don't cache
+	if (r.TTL == tlsutil.NeverCache) || (!r.Invalid && v.negativettl == tlsutil.NeverCache) {
+		return r
+	}
+	//sets cache
+	ttl := v.ttl
+	if !r.Invalid && v.negativettl > 0 {
+		ttl = v.negativettl
+	}
+	if r.TTL > ttl { //if major than cachettl
+		r.TTL = ttl //truncates reponse to cachettl
+	}
+	if r.TTL > 0 {
+		key := fmt.Sprintf("%s_%s", chain, dnsname)
+		v.cache.Set(key, r, time.Duration(r.TTL)*time.Second)
+	}
+	return r
 }
 
 type downloadCache struct {
 	cache *cacheimpl.Cache
 }
 
-func newDownloadCache(ttl, cleanup time.Duration) *downloadCache {
-	return &downloadCache{cache: cacheimpl.New(ttl, cleanup)}
+func newDownloadCache(ttl int, cleanup time.Duration) *downloadCache {
+	return &downloadCache{cache: cacheimpl.New(time.Duration(ttl)*time.Second, cleanup)}
 }
 
 func (d *downloadCache) get(chain string) ([]*x509.Certificate, bool) {

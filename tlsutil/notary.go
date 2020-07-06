@@ -6,7 +6,6 @@ import (
 	"context"
 	"crypto/x509"
 	"net"
-	"time"
 )
 
 // Notary is the main interface that must be implemented by notary services
@@ -21,10 +20,14 @@ type Notary interface {
 
 //VerifyResponse stores information about the service's verification responses
 type VerifyResponse struct {
-	// Timestamp stores verify time response
-	Timestamp time.Time `json:"timestamp"`
 	// Invalid is true if the chain and dnsname is invalid
 	Invalid bool `json:"invalid"`
 	// Reason stores the reason why it's not valid
 	Reason string `json:"reason,omitempty"`
+	// TTL is a number in seconds used for caching
+	TTL int `json:"ttl"`
 }
+
+// NeverCache is a special value for TTL. If TTLs has this value, caches
+// should not store the response
+const NeverCache = -1

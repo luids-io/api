@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"net"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -132,11 +131,10 @@ func (s *Service) VerifyChain(ctx context.Context, in *pb.VerifyChainRequest) (*
 		return nil, s.mapError(err)
 	}
 	// response
-	tstamp, _ := ptypes.TimestampProto(response.Timestamp)
 	res := &pb.VerifyChainResponse{
-		Ts:      tstamp,
 		Invalid: response.Invalid,
 		Reason:  response.Reason,
+		TTL:     int32(response.TTL),
 	}
 	return res, nil
 }

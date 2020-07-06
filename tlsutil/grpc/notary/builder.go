@@ -4,11 +4,11 @@ package notary
 
 import (
 	"errors"
-	"time"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 
+	"github.com/luids-io/api/tlsutil"
 	"github.com/luids-io/core/apiservice"
 	"github.com/luids-io/core/grpctls"
 	"github.com/luids-io/core/option"
@@ -38,12 +38,12 @@ func ClientBuilder(opt ...ClientOption) apiservice.BuildFn {
 		}
 		if len(def.Opts) > 0 {
 			// parse and set cache options
-			ttl, err := parseCacheOpts(def.Opts)
+			ttl, negativettl, err := parseCacheOpts(def.Opts)
 			if err != nil {
 				return nil, err
 			}
 			if ttl > 0 {
-				opt = append(opt, SetCache(time.Duration(ttl)*time.Second))
+				opt = append(opt, SetCache(ttl, negativettl))
 			}
 		}
 		//creates client
@@ -52,20 +52,31 @@ func ClientBuilder(opt ...ClientOption) apiservice.BuildFn {
 	}
 }
 
-func parseCacheOpts(opts map[string]interface{}) (int, error) {
-	var ttl int
+func parseCacheOpts(opts map[string]interface{}) (int, int, error) {
+	var ttl, negativettl int
 	// get ttl
 	value, ok, err := option.Int(opts, "ttl")
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	if ok {
 		if value < 0 {
-			return 0, errors.New("invalid 'ttl'")
+			return 0, 0, errors.New("invalid 'ttl'")
 		}
 		ttl = value
 	}
-	return ttl, nil
+	// get negativettl
+	value, ok, err = option.Int(opts, "negativettl")
+	if err != nil {
+		return 0, 0, err
+	}
+	if ok {
+		if value < tlsutil.NeverCache {
+			return 0, 0, errors.New("invalid 'negativettl'")
+		}
+		negativettl = value
+	}
+	return ttl, negativettl, nil
 }
 
 func init() {
