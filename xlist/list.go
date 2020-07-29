@@ -6,14 +6,6 @@ import (
 	"context"
 )
 
-// List is the main interface for RBL lists
-type List interface {
-	ID() string
-	Class() string
-	Checker
-	ReadOnly() bool
-}
-
 // Checker is the interface for check lists
 type Checker interface {
 	// Check method checks if the value encoded as string is in the list
@@ -37,18 +29,3 @@ type Response struct {
 // NeverCache is a special value for TTL. If TTLs has this value, caches
 // should not store the response
 const NeverCache = -1
-
-// Writer is the interface for write in lists
-type Writer interface {
-	// Append to the list a resource (or group) encoded as string in the format
-	Append(ctx context.Context, name string, r Resource, f Format) error
-	// Remove from the list
-	Remove(ctx context.Context, name string, r Resource, f Format) error
-	// Clear all items in the list
-	Clear(ctx context.Context) error
-}
-
-// ListFinder interface for lists
-type ListFinder interface {
-	FindListByID(string) (List, bool)
-}

@@ -39,20 +39,6 @@ func (r Resource) IsValid() bool {
 	return false
 }
 
-// ValidFormat returns true if format passed is valid
-func (r Resource) ValidFormat(f Format) bool {
-	if f == Plain {
-		return true
-	}
-	if (r == IPv4 || r == IPv6) && f == CIDR {
-		return true
-	}
-	if r == Domain && f == Sub {
-		return true
-	}
-	return false
-}
-
 // InArray returns true if the resource value exists in the array passed
 // as parameter
 func (r Resource) InArray(array []Resource) bool {
