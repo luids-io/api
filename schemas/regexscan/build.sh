@@ -7,4 +7,4 @@ SRCDIR=$(dirname $(readlink -f "$0"))
 GOPATH="${GOPATH:-$HOME/go}"
 PATH=$GOPATH/bin:$PATH
 
-protoc -I $GOPATH/src -I . regexscan.proto --go_out=plugins=grpc:$GOPATH/src
+protoc -I $GOPATH/src -I . $SRCDIR/regexscan.proto --go_out=plugins=grpc:$GOPATH/src

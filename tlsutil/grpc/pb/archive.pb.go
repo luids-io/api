@@ -4,7 +4,7 @@
 // versions:
 // 	protoc-gen-go v1.23.0
 // 	protoc        v3.6.1
-// source: archive.proto
+// source: github.com/luids-io/api/schemas/tlsutil/archive.proto
 
 package pb
 
@@ -43,7 +43,7 @@ type SaveConnectionRequest struct {
 func (x *SaveConnectionRequest) Reset() {
 	*x = SaveConnectionRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_archive_proto_msgTypes[0]
+		mi := &file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -56,7 +56,7 @@ func (x *SaveConnectionRequest) String() string {
 func (*SaveConnectionRequest) ProtoMessage() {}
 
 func (x *SaveConnectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_archive_proto_msgTypes[0]
+	mi := &file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -69,7 +69,7 @@ func (x *SaveConnectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveConnectionRequest.ProtoReflect.Descriptor instead.
 func (*SaveConnectionRequest) Descriptor() ([]byte, []int) {
-	return file_archive_proto_rawDescGZIP(), []int{0}
+	return file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *SaveConnectionRequest) GetConnection() *ConnectionData {
@@ -90,7 +90,7 @@ type SaveConnectionResponse struct {
 func (x *SaveConnectionResponse) Reset() {
 	*x = SaveConnectionResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_archive_proto_msgTypes[1]
+		mi := &file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -103,7 +103,7 @@ func (x *SaveConnectionResponse) String() string {
 func (*SaveConnectionResponse) ProtoMessage() {}
 
 func (x *SaveConnectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_archive_proto_msgTypes[1]
+	mi := &file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -116,7 +116,7 @@ func (x *SaveConnectionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveConnectionResponse.ProtoReflect.Descriptor instead.
 func (*SaveConnectionResponse) Descriptor() ([]byte, []int) {
-	return file_archive_proto_rawDescGZIP(), []int{1}
+	return file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *SaveConnectionResponse) GetId() string {
@@ -137,7 +137,7 @@ type SaveCertificateRequest struct {
 func (x *SaveCertificateRequest) Reset() {
 	*x = SaveCertificateRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_archive_proto_msgTypes[2]
+		mi := &file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -150,7 +150,7 @@ func (x *SaveCertificateRequest) String() string {
 func (*SaveCertificateRequest) ProtoMessage() {}
 
 func (x *SaveCertificateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_archive_proto_msgTypes[2]
+	mi := &file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -163,7 +163,7 @@ func (x *SaveCertificateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveCertificateRequest.ProtoReflect.Descriptor instead.
 func (*SaveCertificateRequest) Descriptor() ([]byte, []int) {
-	return file_archive_proto_rawDescGZIP(), []int{2}
+	return file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SaveCertificateRequest) GetCertificate() *CertificateData {
@@ -184,7 +184,7 @@ type SaveCertificateResponse struct {
 func (x *SaveCertificateResponse) Reset() {
 	*x = SaveCertificateResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_archive_proto_msgTypes[3]
+		mi := &file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -197,7 +197,7 @@ func (x *SaveCertificateResponse) String() string {
 func (*SaveCertificateResponse) ProtoMessage() {}
 
 func (x *SaveCertificateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_archive_proto_msgTypes[3]
+	mi := &file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -210,7 +210,7 @@ func (x *SaveCertificateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveCertificateResponse.ProtoReflect.Descriptor instead.
 func (*SaveCertificateResponse) Descriptor() ([]byte, []int) {
-	return file_archive_proto_rawDescGZIP(), []int{3}
+	return file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SaveCertificateResponse) GetId() string {
@@ -231,7 +231,7 @@ type SaveRecordRequest struct {
 func (x *SaveRecordRequest) Reset() {
 	*x = SaveRecordRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_archive_proto_msgTypes[4]
+		mi := &file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -244,7 +244,7 @@ func (x *SaveRecordRequest) String() string {
 func (*SaveRecordRequest) ProtoMessage() {}
 
 func (x *SaveRecordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_archive_proto_msgTypes[4]
+	mi := &file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -257,7 +257,7 @@ func (x *SaveRecordRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveRecordRequest.ProtoReflect.Descriptor instead.
 func (*SaveRecordRequest) Descriptor() ([]byte, []int) {
-	return file_archive_proto_rawDescGZIP(), []int{4}
+	return file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SaveRecordRequest) GetRecord() *RecordData {
@@ -267,18 +267,19 @@ func (x *SaveRecordRequest) GetRecord() *RecordData {
 	return nil
 }
 
-var File_archive_proto protoreflect.FileDescriptor
+var File_github_com_luids_io_api_schemas_tlsutil_archive_proto protoreflect.FileDescriptor
 
-var file_archive_proto_rawDesc = []byte{
-	0x0a, 0x0d, 0x61, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12,
-	0x10, 0x6c, 0x75, 0x69, 0x64, 0x73, 0x2e, 0x74, 0x6c, 0x73, 0x75, 0x74, 0x69, 0x6c, 0x2e, 0x76,
-	0x31, 0x1a, 0x34, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6c, 0x75,
-	0x69, 0x64, 0x73, 0x2d, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x73, 0x63, 0x68, 0x65, 0x6d,
-	0x61, 0x73, 0x2f, 0x74, 0x6c, 0x73, 0x75, 0x74, 0x69, 0x6c, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x6f,
-	0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x33, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e,
-	0x63, 0x6f, 0x6d, 0x2f, 0x67, 0x6f, 0x6c, 0x61, 0x6e, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x62, 0x75, 0x66, 0x2f, 0x70, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2f, 0x65, 0x6d, 0x70, 0x74, 0x79,
-	0x2f, 0x65, 0x6d, 0x70, 0x74, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x59, 0x0a, 0x15,
+var file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDesc = []byte{
+	0x0a, 0x35, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6c, 0x75, 0x69,
+	0x64, 0x73, 0x2d, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x73, 0x63, 0x68, 0x65, 0x6d, 0x61,
+	0x73, 0x2f, 0x74, 0x6c, 0x73, 0x75, 0x74, 0x69, 0x6c, 0x2f, 0x61, 0x72, 0x63, 0x68, 0x69, 0x76,
+	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x10, 0x6c, 0x75, 0x69, 0x64, 0x73, 0x2e, 0x74,
+	0x6c, 0x73, 0x75, 0x74, 0x69, 0x6c, 0x2e, 0x76, 0x31, 0x1a, 0x1b, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
+	0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x65, 0x6d, 0x70, 0x74, 0x79,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x34, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63,
+	0x6f, 0x6d, 0x2f, 0x6c, 0x75, 0x69, 0x64, 0x73, 0x2d, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f,
+	0x73, 0x63, 0x68, 0x65, 0x6d, 0x61, 0x73, 0x2f, 0x74, 0x6c, 0x73, 0x75, 0x74, 0x69, 0x6c, 0x2f,
+	0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x59, 0x0a, 0x15,
 	0x53, 0x61, 0x76, 0x65, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65,
 	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x40, 0x0a, 0x0a, 0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74,
 	0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x6c, 0x75, 0x69, 0x64,
@@ -326,19 +327,19 @@ var file_archive_proto_rawDesc = []byte{
 }
 
 var (
-	file_archive_proto_rawDescOnce sync.Once
-	file_archive_proto_rawDescData = file_archive_proto_rawDesc
+	file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDescOnce sync.Once
+	file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDescData = file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDesc
 )
 
-func file_archive_proto_rawDescGZIP() []byte {
-	file_archive_proto_rawDescOnce.Do(func() {
-		file_archive_proto_rawDescData = protoimpl.X.CompressGZIP(file_archive_proto_rawDescData)
+func file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDescGZIP() []byte {
+	file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDescOnce.Do(func() {
+		file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDescData = protoimpl.X.CompressGZIP(file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDescData)
 	})
-	return file_archive_proto_rawDescData
+	return file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDescData
 }
 
-var file_archive_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
-var file_archive_proto_goTypes = []interface{}{
+var file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_github_com_luids_io_api_schemas_tlsutil_archive_proto_goTypes = []interface{}{
 	(*SaveConnectionRequest)(nil),   // 0: luids.tlsutil.v1.SaveConnectionRequest
 	(*SaveConnectionResponse)(nil),  // 1: luids.tlsutil.v1.SaveConnectionResponse
 	(*SaveCertificateRequest)(nil),  // 2: luids.tlsutil.v1.SaveCertificateRequest
@@ -349,7 +350,7 @@ var file_archive_proto_goTypes = []interface{}{
 	(*RecordData)(nil),              // 7: luids.tlsutil.v1.RecordData
 	(*empty.Empty)(nil),             // 8: google.protobuf.Empty
 }
-var file_archive_proto_depIdxs = []int32{
+var file_github_com_luids_io_api_schemas_tlsutil_archive_proto_depIdxs = []int32{
 	5, // 0: luids.tlsutil.v1.SaveConnectionRequest.connection:type_name -> luids.tlsutil.v1.ConnectionData
 	6, // 1: luids.tlsutil.v1.SaveCertificateRequest.certificate:type_name -> luids.tlsutil.v1.CertificateData
 	7, // 2: luids.tlsutil.v1.SaveRecordRequest.record:type_name -> luids.tlsutil.v1.RecordData
@@ -366,14 +367,14 @@ var file_archive_proto_depIdxs = []int32{
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_archive_proto_init() }
-func file_archive_proto_init() {
-	if File_archive_proto != nil {
+func init() { file_github_com_luids_io_api_schemas_tlsutil_archive_proto_init() }
+func file_github_com_luids_io_api_schemas_tlsutil_archive_proto_init() {
+	if File_github_com_luids_io_api_schemas_tlsutil_archive_proto != nil {
 		return
 	}
 	file_github_com_luids_io_api_schemas_tlsutil_common_proto_init()
 	if !protoimpl.UnsafeEnabled {
-		file_archive_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SaveConnectionRequest); i {
 			case 0:
 				return &v.state
@@ -385,7 +386,7 @@ func file_archive_proto_init() {
 				return nil
 			}
 		}
-		file_archive_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SaveConnectionResponse); i {
 			case 0:
 				return &v.state
@@ -397,7 +398,7 @@ func file_archive_proto_init() {
 				return nil
 			}
 		}
-		file_archive_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+		file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SaveCertificateRequest); i {
 			case 0:
 				return &v.state
@@ -409,7 +410,7 @@ func file_archive_proto_init() {
 				return nil
 			}
 		}
-		file_archive_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+		file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SaveCertificateResponse); i {
 			case 0:
 				return &v.state
@@ -421,7 +422,7 @@ func file_archive_proto_init() {
 				return nil
 			}
 		}
-		file_archive_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+		file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SaveRecordRequest); i {
 			case 0:
 				return &v.state
@@ -438,20 +439,20 @@ func file_archive_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_archive_proto_rawDesc,
+			RawDescriptor: file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_archive_proto_goTypes,
-		DependencyIndexes: file_archive_proto_depIdxs,
-		MessageInfos:      file_archive_proto_msgTypes,
+		GoTypes:           file_github_com_luids_io_api_schemas_tlsutil_archive_proto_goTypes,
+		DependencyIndexes: file_github_com_luids_io_api_schemas_tlsutil_archive_proto_depIdxs,
+		MessageInfos:      file_github_com_luids_io_api_schemas_tlsutil_archive_proto_msgTypes,
 	}.Build()
-	File_archive_proto = out.File
-	file_archive_proto_rawDesc = nil
-	file_archive_proto_goTypes = nil
-	file_archive_proto_depIdxs = nil
+	File_github_com_luids_io_api_schemas_tlsutil_archive_proto = out.File
+	file_github_com_luids_io_api_schemas_tlsutil_archive_proto_rawDesc = nil
+	file_github_com_luids_io_api_schemas_tlsutil_archive_proto_goTypes = nil
+	file_github_com_luids_io_api_schemas_tlsutil_archive_proto_depIdxs = nil
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -638,5 +639,5 @@ var _Archive_serviceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "archive.proto",
+	Metadata: "github.com/luids-io/api/schemas/tlsutil/archive.proto",
 }

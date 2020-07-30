@@ -2,8 +2,8 @@
 
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
 import "github.com/luids-io/api/schemas/tlsutil/common.proto";
-import "github.com/golang/protobuf/ptypes/empty/empty.proto";
 
 package luids.tlsutil.v1;
 option go_package = "github.com/luids-io/api/tlsutil/grpc/pb";

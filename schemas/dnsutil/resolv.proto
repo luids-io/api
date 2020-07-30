@@ -2,8 +2,8 @@
 
 syntax = "proto3";
 
-import "github.com/golang/protobuf/ptypes/empty/empty.proto";
-import "github.com/golang/protobuf/ptypes/timestamp/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 package luids.dnsutil.v1;
 option go_package = "github.com/luids-io/api/dnsutil/grpc/pb";
