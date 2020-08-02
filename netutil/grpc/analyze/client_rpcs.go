@@ -7,11 +7,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
 	"google.golang.org/grpc"
 
-	"github.com/luids-io/api/netanalyze/grpc/pb"
+	"github.com/luids-io/api/netutil/grpc/pb"
 )
 
 type pcktClientStream interface {
@@ -23,14 +21,12 @@ type rpcClient struct {
 	client    pb.AnalyzeClient
 	stream    pcktClientStream
 	dataCh    chan *pb.SendPacketRequest
-	layer     gopacket.LayerType
 	connected bool
 }
 
-func newRPCClient(c pb.AnalyzeClient, l gopacket.LayerType, buffSize int) *rpcClient {
+func newRPCClient(c pb.AnalyzeClient, buffSize int) *rpcClient {
 	r := &rpcClient{
 		client: c,
-		layer:  l,
 		dataCh: make(chan *pb.SendPacketRequest, buffSize),
 	}
 	return r
@@ -74,12 +70,13 @@ func (r *rpcClient) send(req *pb.SendPacketRequest) error {
 	if !r.connected {
 		err := r.connect()
 		if err != nil {
-			return err
+			return fmt.Errorf("connecting error: %v", err)
 		}
 	}
 	//send
 	err := r.stream.Send(req)
 	if err != nil {
+		err = fmt.Errorf("sending error: %v", err)
 		r.close()
 	}
 	return err
@@ -87,16 +84,7 @@ func (r *rpcClient) send(req *pb.SendPacketRequest) error {
 
 func (r *rpcClient) connect() error {
 	var err error
-	switch r.layer {
-	case layers.LayerTypeEthernet:
-		r.stream, err = r.client.SendEtherPackets(context.Background())
-	case layers.LayerTypeIPv4:
-		r.stream, err = r.client.SendIPv4Packets(context.Background())
-	case layers.LayerTypeIPv6:
-		r.stream, err = r.client.SendIPv6Packets(context.Background())
-	default:
-		err = fmt.Errorf("unexpected layer type %v", r.layer)
-	}
+	r.stream, err = r.client.SendPackets(context.Background())
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-// Copyright 2019 Luis Guillén Civera <luisguillenc@gmail.com>. See LICENSE.
+// Copyright 2020 Luis Guillén Civera <luisguillenc@gmail.com>. See LICENSE.
 
 package analyze
 
@@ -7,16 +7,14 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/golang/protobuf/ptypes"
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/status"
 
-	"github.com/luids-io/api/netanalyze"
-	"github.com/luids-io/api/netanalyze/grpc/pb"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/luids-io/api/netutil"
+	"github.com/luids-io/api/netutil/grpc/pb"
 	"github.com/luids-io/core/yalogi"
 )
 
@@ -28,9 +26,7 @@ type Client struct {
 	conn   *grpc.ClientConn
 	client pb.AnalyzeClient
 	//rpc management
-	rpcEth *rpcClient
-	rpcIP4 *rpcClient
-	rpcIP6 *rpcClient
+	rpc *rpcClient
 	//control
 	started bool
 	close   chan struct{}
@@ -85,67 +81,27 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	return c
 }
 
-// SendEtherPacket implements capture.Analyzer interface
-func (c *Client) SendEtherPacket(data []byte, md *gopacket.PacketMetadata) error {
+// SendPacket implements netutil.Analyzer interface
+func (c *Client) SendPacket(layer netutil.Layer, data []byte, md netutil.PacketMetadata) error {
 	if !c.started {
-		return netanalyze.ErrUnavailable
+		return netutil.ErrUnavailable
 	}
-	req, err := getPacketRequest(data, md, layers.LayerTypeEthernet)
-	if err != nil {
-		return netanalyze.ErrBadRequest
+	ts, _ := ptypes.TimestampProto(md.Timestamp)
+	req := &pb.SendPacketRequest{
+		Layer: pb.Layer(layer),
+		Data:  data,
+		Metadata: &pb.PacketMetadata{
+			Timestamp:      ts,
+			CaptureLength:  int32(md.CaptureLength),
+			Length:         int32(md.Length),
+			InterfaceIndex: int32(md.InterfaceIndex),
+		},
 	}
-	err = c.rpcEth.Send(req)
+	err := c.rpc.Send(req)
 	if err != nil {
 		return c.mapError(err)
 	}
 	return nil
-}
-
-// SendIPv4Packet implements capture.Analyzer interface
-func (c *Client) SendIPv4Packet(data []byte, md *gopacket.PacketMetadata) error {
-	if !c.started {
-		return netanalyze.ErrUnavailable
-	}
-	req, err := getPacketRequest(data, md, layers.LayerTypeIPv4)
-	if err != nil {
-		return netanalyze.ErrBadRequest
-	}
-	err = c.rpcIP4.Send(req)
-	if err != nil {
-		return c.mapError(err)
-	}
-	return nil
-}
-
-// SendIPv6Packet implements capture.Analyzer interface
-func (c *Client) SendIPv6Packet(data []byte, md *gopacket.PacketMetadata) error {
-	if !c.started {
-		return netanalyze.ErrUnavailable
-	}
-	req, err := getPacketRequest(data, md, layers.LayerTypeIPv6)
-	if err != nil {
-		return netanalyze.ErrBadRequest
-	}
-	err = c.rpcIP6.Send(req)
-	if err != nil {
-		return c.mapError(err)
-	}
-	return nil
-}
-
-func getPacketRequest(data []byte, md *gopacket.PacketMetadata, layer gopacket.LayerType) (*pb.SendPacketRequest, error) {
-	req := &pb.SendPacketRequest{}
-	req.Metadata = &pb.PacketMetadata{}
-	if md.Timestamp.IsZero() {
-		return nil, fmt.Errorf("invalid timestamp")
-	}
-	req.Metadata.Timestamp, _ = ptypes.TimestampProto(md.Timestamp)
-	req.Metadata.InterfaceIndex = int32(md.InterfaceIndex)
-	if len(data) == 0 {
-		return nil, fmt.Errorf("invalid data payload")
-	}
-	req.Data = data
-	return req, nil
 }
 
 func (c *Client) start() {
@@ -154,18 +110,10 @@ func (c *Client) start() {
 	c.errs = make(chan error, c.opts.buffSize)
 	go c.processErrs()
 
-	//init rpc managers
+	//init rpc manager
 	c.wg.Add(1)
-	c.rpcEth = newRPCClient(c.client, layers.LayerTypeEthernet, c.opts.buffSize)
-	go c.rpcEth.run(&c.wg, c.close, c.errs)
-
-	c.wg.Add(1)
-	c.rpcIP4 = newRPCClient(c.client, layers.LayerTypeIPv4, c.opts.buffSize)
-	go c.rpcIP4.run(&c.wg, c.close, c.errs)
-
-	c.wg.Add(1)
-	c.rpcIP6 = newRPCClient(c.client, layers.LayerTypeIPv6, c.opts.buffSize)
-	go c.rpcIP6.run(&c.wg, c.close, c.errs)
+	c.rpc = newRPCClient(c.client, c.opts.buffSize)
+	go c.rpc.run(&c.wg, c.close, c.errs)
 
 	c.started = true
 }
@@ -216,17 +164,17 @@ func (c *Client) mapError(err error) error {
 	}
 	switch st.Code() {
 	case codes.InvalidArgument:
-		return netanalyze.ErrBadRequest
+		return netutil.ErrBadRequest
 	case codes.OutOfRange:
-		return netanalyze.ErrTimeOutOfSync
+		return netutil.ErrTimeOutOfSync
 	case codes.Unimplemented:
-		return netanalyze.ErrNotSupported
+		return netutil.ErrNotSupported
 	case codes.Internal:
-		return netanalyze.ErrInternal
+		return netutil.ErrInternal
 	case codes.Unavailable:
-		return netanalyze.ErrUnavailable
+		return netutil.ErrUnavailable
 	default:
-		return netanalyze.ErrUnavailable
+		return netutil.ErrUnavailable
 	}
 }
 

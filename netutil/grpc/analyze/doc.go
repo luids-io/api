@@ -6,7 +6,7 @@ import "fmt"
 
 // Constants for api description
 const (
-	APIName    = "luids.netanalyze"
+	APIName    = "luids.netutil"
 	APIVersion = "v1"
 	APIService = "Analyze"
 )

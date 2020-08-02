@@ -1,0 +1,32 @@
+// Copyright 2020 Luis Guillén Civera <luisguillenc@gmail.com>. View LICENSE.
+
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+package luids.netutil.v1;
+option go_package = "github.com/luids-io/api/netutil/grpc/pb";
+
+service Analyze {
+    rpc SendPackets (stream SendPacketRequest) returns (google.protobuf.Empty) {}
+}
+
+enum Layer {
+    ETHERNET = 0;
+    IPV4     = 1;
+    IPV6     = 2;
+}
+
+message SendPacketRequest {
+    Layer layer = 1;
+    PacketMetadata metadata = 2;
+    bytes data = 3;
+}
+
+message PacketMetadata {
+    google.protobuf.Timestamp timestamp = 1;
+    int32 capture_length  = 2;
+    int32 length = 3;
+    int32 interface_index = 4;
+}
