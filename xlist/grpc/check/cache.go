@@ -11,7 +11,7 @@ import (
 	"github.com/luids-io/api/xlist"
 )
 
-const defaultCacheCleanups = 6 * time.Minute
+const defaultCacheCleanups = 3 * time.Minute
 
 // cache implements a cache
 type cache struct {

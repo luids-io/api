@@ -15,35 +15,25 @@ service Check {
 
 //enums
 enum Resource {
-  IPV4 = 0;
-  IPV6 = 1;
+  IPV4   = 0;
+  IPV6   = 1;
   DOMAIN = 2;
-  MD5 = 3;
-  SHA1 = 4;
+  MD5    = 3;
+  SHA1   = 4;
   SHA256 = 5;
 }
 
 message CheckRequest {
-  Request request = 1;
-}
-
-message CheckResponse {
-  Response response = 1;
-}
-
-message ResourcesResponse {
-  repeated Resource resources = 1;
-}
-
-// NOTE: request and response are in separate messages because they
-// will be useful in a future multichecking api
-message Request {
   string name = 1;
   Resource resource = 2;
 }
 
-message Response {
+message CheckResponse {
   bool result = 1;
   string reason = 2;
   int32 TTL = 3 ;
+}
+
+message ResourcesResponse {
+  repeated Resource resources = 1;
 }

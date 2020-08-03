@@ -4,6 +4,7 @@ package check
 
 import (
 	"errors"
+	"time"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
@@ -38,12 +39,22 @@ func ClientBuilder(opt ...ClientOption) apiservice.BuildFn {
 		}
 		if len(def.Opts) > 0 {
 			// parse and set cache options
-			ttl, negativettl, err := parseCacheOpts(def.Opts)
+			ttl, negativettl, cleanup, err := parseCacheOpts(def.Opts)
 			if err != nil {
 				return nil, err
 			}
 			if ttl > 0 || negativettl > 0 {
 				opt = append(opt, SetCache(ttl, negativettl))
+				if cleanup > 0 {
+					opt = append(opt, SetCacheCleanUps(time.Duration(cleanup)*time.Second))
+				}
+			}
+			debugreq, ok, err := option.Bool(def.Opts, "debugreq")
+			if err != nil {
+				return nil, err
+			}
+			if ok {
+				opt = append(opt, DebugRequests(debugreq))
 			}
 		}
 		//creates client
@@ -52,27 +63,27 @@ func ClientBuilder(opt ...ClientOption) apiservice.BuildFn {
 	}
 }
 
-func parseCacheOpts(opts map[string]interface{}) (int, int, error) {
-	var ttl, negativettl int
+func parseCacheOpts(opts map[string]interface{}) (int, int, int, error) {
+	var ttl, negativettl, cleanup int
 	// get ttl
 	value, ok, err := option.Int(opts, "ttl")
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
 	if ok {
 		if value < 0 {
-			return 0, 0, errors.New("invalid 'ttl'")
+			return 0, 0, 0, errors.New("invalid 'ttl'")
 		}
 		ttl = value
 	}
 	// get negativettl
 	value, ok, err = option.Int(opts, "negativettl")
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
 	if ok {
 		if value < 0 {
-			return 0, 0, errors.New("invalid 'negativettl'")
+			return 0, 0, 0, errors.New("invalid 'negativettl'")
 		}
 		negativettl = value
 	} else {
@@ -80,7 +91,18 @@ func parseCacheOpts(opts map[string]interface{}) (int, int, error) {
 			negativettl = ttl
 		}
 	}
-	return ttl, negativettl, nil
+	// get cleanup
+	value, ok, err = option.Int(opts, "cleanup")
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	if ok {
+		if value < 0 {
+			return 0, 0, 0, errors.New("invalid 'cleanup'")
+		}
+		cleanup = value
+	}
+	return ttl, negativettl, cleanup, nil
 }
 
 func init() {

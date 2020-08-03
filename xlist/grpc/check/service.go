@@ -8,6 +8,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
 	"github.com/luids-io/api/xlist"
@@ -29,9 +30,7 @@ type serviceOpts struct {
 	disclosureErr bool
 }
 
-var defaultServiceOpts = serviceOpts{
-	logger: yalogi.LogNull,
-}
+var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
 
 // ServiceOption is used for service configuration
 type ServiceOption func(*serviceOpts)
@@ -76,20 +75,19 @@ func RegisterServer(server *grpc.Server, service *Service) {
 
 // Check implements grpc handler for Check
 func (s *Service) Check(ctx context.Context, in *pb.CheckRequest) (*pb.CheckResponse, error) {
-	req := in.GetRequest()
-	if req == nil {
-		return nil, s.mapError(xlist.ErrBadRequest)
-	}
-	resp, err := s.checker.Check(ctx, req.GetName(), xlist.Resource(req.GetResource()))
+	name := in.GetName()
+	resource := xlist.Resource(in.GetResource())
+	resp, err := s.checker.Check(ctx, name, resource)
 	if err != nil {
+		paddr := getPeerAddr(ctx)
+		s.logger.Warnf("service.xlist.check: [peer=%s] check(%s,%v): %v", paddr, name, resource, err)
 		return nil, s.mapError(err)
 	}
 	reply := &pb.CheckResponse{
-		Response: &pb.Response{
-			Result: resp.Result,
-			Reason: resp.Reason,
-			TTL:    int32(resp.TTL),
-		}}
+		Result: resp.Result,
+		Reason: resp.Reason,
+		TTL:    int32(resp.TTL),
+	}
 	return reply, nil
 }
 
@@ -136,4 +134,12 @@ func (s *Service) mapError(err error) error {
 		}
 		return rpcerr
 	}
+}
+
+func getPeerAddr(ctx context.Context) (paddr string) {
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		paddr = p.Addr.String()
+	}
+	return
 }

@@ -36,10 +36,9 @@ type Client struct {
 }
 
 type clientOpts struct {
-	logger          yalogi.Logger
-	closeConn       bool
-	forceValidation bool
-	debugreq        bool
+	logger    yalogi.Logger
+	closeConn bool
+	debugreq  bool
 	//cache opts
 	useCache     bool
 	ttl          int
@@ -76,13 +75,6 @@ func SetLogger(l yalogi.Logger) ClientOption {
 		if l != nil {
 			o.logger = l
 		}
-	}
-}
-
-// ForceValidation forces component to ignore context and validate requests
-func ForceValidation(b bool) ClientOption {
-	return func(o *clientOpts) {
-		o.forceValidation = b
 	}
 }
 
@@ -152,7 +144,7 @@ func (c *Client) Check(ctx context.Context, name string, resource xlist.Resource
 	if !c.checks(resource) {
 		return xlist.Response{}, xlist.ErrUnavailable
 	}
-	name, ctx, err := xlist.DoValidation(ctx, name, resource, c.opts.forceValidation)
+	name, ctx, err := xlist.DoValidation(ctx, name, resource, false)
 	if err != nil {
 		return xlist.Response{}, err
 	}
@@ -218,15 +210,15 @@ func (c *Client) sync(ctx context.Context) error {
 }
 
 func (c *Client) doCheck(ctx context.Context, name string, resource xlist.Resource) (xlist.Response, error) {
-	req := &pb.CheckRequest{Request: &pb.Request{Name: name, Resource: pb.Resource(resource)}}
+	req := &pb.CheckRequest{Name: name, Resource: pb.Resource(resource)}
 	res, err := c.client.Check(ctx, req)
 	if err != nil {
 		return xlist.Response{}, c.mapError(err)
 	}
 	r := xlist.Response{
-		Result: res.GetResponse().GetResult(),
-		Reason: res.GetResponse().GetReason(),
-		TTL:    int(res.GetResponse().GetTTL())}
+		Result: res.GetResult(),
+		Reason: res.GetReason(),
+		TTL:    int(res.GetTTL())}
 	return r, nil
 }
 
