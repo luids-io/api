@@ -133,10 +133,8 @@ func (c *Client) Check(ctx context.Context, client, resolved net.IP, name string
 	}
 	//exec query
 	response, err := c.doCheck(ctx, client, resolved, name)
-	if c.opts.useCache {
-		if err == nil {
-			c.cache.set(client, resolved, name, response)
-		}
+	if c.opts.useCache && err == nil {
+		c.cache.set(client, resolved, name, response)
 	}
 	return response, err
 }
