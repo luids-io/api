@@ -10,6 +10,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
 	"github.com/luids-io/api/dnsutil"
@@ -60,11 +61,15 @@ func (s *Service) Check(ctx context.Context, in *pb.ResolvCheckRequest) (*pb.Res
 	//parse request
 	client, resolved, name, err := parseRequest(in)
 	if err != nil {
+		paddr := getPeerAddr(ctx)
+		s.logger.Warnf("service.dnsutil.resolvcheck: [peer=%s] check(%v,%v,%s): %v", paddr, client, resolved, name, err)
 		return nil, s.mapError(dnsutil.ErrBadRequest)
 	}
 	//do request
 	resp, err := s.checker.Check(ctx, client, resolved, name)
 	if err != nil {
+		paddr := getPeerAddr(ctx)
+		s.logger.Warnf("service.dnsutil.resolvcheck: [peer=%s] check(%v,%v,%s): %v", paddr, client, resolved, name, err)
 		return nil, s.mapError(err)
 	}
 	//return response
@@ -111,4 +116,12 @@ func (s *Service) mapError(err error) error {
 	default:
 		return status.Error(codes.Internal, dnsutil.ErrInternal.Error())
 	}
+}
+
+func getPeerAddr(ctx context.Context) (paddr string) {
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		paddr = p.Addr.String()
+	}
+	return
 }

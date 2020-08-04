@@ -12,7 +12,7 @@ import (
 	"github.com/luids-io/api/dnsutil"
 )
 
-const defaultCacheCleanups = 5 * time.Minute
+const defaultCacheCleanups = 3 * time.Minute
 
 // cache implements a cache
 type cache struct {
@@ -36,17 +36,17 @@ func (c *cache) flush() {
 	c.cachei.Flush()
 }
 
-func (c *cache) get(client, resolved net.IP, name string) (dnsutil.ResolvResponse, bool) {
+func (c *cache) get(client, resolved net.IP, name string) (dnsutil.CacheResponse, bool) {
 	key := fmt.Sprintf("%s_%s_%s", client.String(), resolved.String(), name)
 	hit, ok := c.cachei.Get(key)
 	if ok {
-		r := hit.(dnsutil.ResolvResponse)
+		r := hit.(dnsutil.CacheResponse)
 		return r, true
 	}
-	return dnsutil.ResolvResponse{}, false
+	return dnsutil.CacheResponse{}, false
 }
 
-func (c *cache) set(client, resolved net.IP, name string, r dnsutil.ResolvResponse) dnsutil.ResolvResponse {
+func (c *cache) set(client, resolved net.IP, name string, r dnsutil.CacheResponse) dnsutil.CacheResponse {
 	//if don't cache
 	if !r.Result && c.negativettl == 0 {
 		return r

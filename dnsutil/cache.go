@@ -21,15 +21,15 @@ type ResolvCollector interface {
 
 // ResolvChecker is the interface for checks in a resolv cache
 type ResolvChecker interface {
-	Check(ctx context.Context, client, resolved net.IP, name string) (ResolvResponse, error)
+	Check(ctx context.Context, client, resolved net.IP, name string) (CacheResponse, error)
 }
 
-// ResolvResponse stores resolv
-type ResolvResponse struct {
+// CacheResponse stores cache response information
+type CacheResponse struct {
 	// Result is true if was resolved
 	Result bool `json:"result"`
 	// Last time resolved
 	Last time.Time `json:"last,omitempty"`
-	// Store time
+	// Store time of cache
 	Store time.Time `json:"store"`
 }

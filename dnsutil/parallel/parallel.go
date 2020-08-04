@@ -25,7 +25,7 @@ type Request struct {
 // to the resolv checker
 type Response struct {
 	Request  Request
-	Response dnsutil.ResolvResponse
+	Response dnsutil.CacheResponse
 	Err      error
 }
 

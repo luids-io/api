@@ -120,9 +120,10 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 }
 
 // Check implements dnsutil.ResolvChecker interface
-func (c *Client) Check(ctx context.Context, client, resolved net.IP, name string) (dnsutil.ResolvResponse, error) {
+func (c *Client) Check(ctx context.Context, client, resolved net.IP, name string) (dnsutil.CacheResponse, error) {
 	if c.closed {
-		return dnsutil.ResolvResponse{}, dnsutil.ErrBadRequest
+		c.logger.Warnf("client.dnsutil.resolvcheck: client is closed")
+		return dnsutil.CacheResponse{}, dnsutil.ErrUnavailable
 	}
 	if c.opts.useCache {
 		resp, ok := c.cache.get(client, resolved, name)
@@ -189,7 +190,7 @@ func (c *Client) Ping() error {
 	return nil
 }
 
-func (c *Client) doCheck(ctx context.Context, client, resolved net.IP, name string) (dnsutil.ResolvResponse, error) {
+func (c *Client) doCheck(ctx context.Context, client, resolved net.IP, name string) (dnsutil.CacheResponse, error) {
 	//exec query
 	response, err := c.client.Check(ctx,
 		&pb.ResolvCheckRequest{
@@ -198,10 +199,11 @@ func (c *Client) doCheck(ctx context.Context, client, resolved net.IP, name stri
 			Name:       name,
 		})
 	if err != nil {
-		return dnsutil.ResolvResponse{}, c.mapError(err)
+		c.logger.Warnf("client.dnsutil.resolvcheck: check(%v,%v,%s): %v", client, resolved, name, err)
+		return dnsutil.CacheResponse{}, c.mapError(err)
 	}
 	//process response
-	resp := dnsutil.ResolvResponse{}
+	resp := dnsutil.CacheResponse{}
 	resp.Result = response.GetResult()
 	tstamp := response.GetLastTs()
 	if tstamp != nil {

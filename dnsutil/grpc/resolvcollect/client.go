@@ -76,7 +76,8 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 // Collect implements dnsutil.ResolvCollector interface
 func (c *Client) Collect(ctx context.Context, client net.IP, name string, resolved []net.IP) error {
 	if c.closed {
-		return dnsutil.ErrNotSupported
+		c.logger.Warnf("client.dnsutil.resolvcollect: client is closed")
+		return dnsutil.ErrUnavailable
 	}
 	rr := make([]string, 0, len(resolved))
 	for _, r := range resolved {
@@ -89,6 +90,7 @@ func (c *Client) Collect(ctx context.Context, client net.IP, name string, resolv
 	}
 	_, err := c.client.Collect(ctx, req)
 	if err != nil {
+		c.logger.Warnf("client.dnsutil.resolvcollect: collect(%v,%s,%v): %v", client, name, resolved, err)
 		return c.mapError(err)
 	}
 	return nil

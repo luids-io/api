@@ -6,12 +6,12 @@ import "errors"
 
 // Some standard errors returned by interfaces
 var (
-	ErrCanceledRequest = errors.New("canceled request")
-	ErrBadRequest      = errors.New("bad request")
-	ErrNotSupported    = errors.New("not supported")
-	ErrUnavailable     = errors.New("not available")
-	ErrInternal        = errors.New("internal error")
+	ErrCanceledRequest = errors.New("dnsutil: canceled request")
+	ErrBadRequest      = errors.New("dnsutil: bad request")
+	ErrNotSupported    = errors.New("dnsutil: not supported")
+	ErrUnavailable     = errors.New("dnsutil: not available")
+	ErrInternal        = errors.New("dnsutil: internal error")
 	//limit errors
-	ErrLimitDNSClientQueries = errors.New("max queries per dns client")
-	ErrLimitResolvedNamesIP  = errors.New("max names resolved for an ip")
+	ErrLimitDNSClientQueries = errors.New("dnsutil: max queries per dns client")
+	ErrLimitResolvedNamesIP  = errors.New("dnsutil: max names resolved for an ip")
 )

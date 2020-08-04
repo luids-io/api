@@ -10,6 +10,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
 	"github.com/luids-io/api/dnsutil"
@@ -60,11 +61,15 @@ func (s *Service) Collect(ctx context.Context, req *pb.ResolvCollectRequest) (*e
 	//parse request
 	client, name, resolved, err := parseRequest(req)
 	if err != nil {
+		paddr := getPeerAddr(ctx)
+		s.logger.Warnf("service.dnsutil.resolvcollect: [peer=%s] collect(%v,%s,%v): %v", paddr, client, name, resolved, err)
 		return nil, s.mapError(dnsutil.ErrBadRequest)
 	}
 	//do request
 	err = s.collector.Collect(ctx, client, name, resolved)
 	if err != nil {
+		paddr := getPeerAddr(ctx)
+		s.logger.Warnf("service.dnsutil.resolvcollect: [peer=%s] collect(%v,%s,%v): %v", paddr, client, name, resolved, err)
 		return nil, s.mapError(err)
 	}
 	//return response
@@ -112,4 +117,12 @@ func (s *Service) mapError(err error) error {
 	default:
 		return status.Error(codes.Internal, dnsutil.ErrInternal.Error())
 	}
+}
+
+func getPeerAddr(ctx context.Context) (paddr string) {
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		paddr = p.Addr.String()
+	}
+	return
 }
