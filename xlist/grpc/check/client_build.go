@@ -9,7 +9,6 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 
-	"github.com/luids-io/api/xlist"
 	"github.com/luids-io/core/apiservice"
 	"github.com/luids-io/core/grpctls"
 	"github.com/luids-io/core/option"
@@ -49,16 +48,9 @@ func ClientBuilder(opt ...ClientOption) apiservice.BuildFn {
 					opt = append(opt, SetCacheCleanUps(time.Duration(cleanup)*time.Second))
 				}
 			}
-			debugreq, ok, err := option.Bool(def.Opts, "debugreq")
-			if err != nil {
-				return nil, err
-			}
-			if ok {
-				opt = append(opt, DebugRequests(debugreq))
-			}
 		}
 		//creates client
-		client := NewClient(dial, []xlist.Resource{}, opt...)
+		client := NewClient(dial, opt...)
 		return client, nil
 	}
 }

@@ -75,14 +75,16 @@ func RegisterServer(server *grpc.Server, service *Service) {
 
 // Check implements grpc handler for Check
 func (s *Service) Check(ctx context.Context, in *pb.CheckRequest) (*pb.CheckResponse, error) {
+	//parse request
 	name := in.GetName()
 	resource := xlist.Resource(in.GetResource())
+	//do request
 	resp, err := s.checker.Check(ctx, name, resource)
 	if err != nil {
-		paddr := getPeerAddr(ctx)
-		s.logger.Warnf("service.xlist.check: [peer=%s] check(%s,%v): %v", paddr, name, resource, err)
+		s.logger.Warnf("service.xlist.check: [peer=%s] check(%s,%v): %v", getPeerAddr(ctx), name, resource, err)
 		return nil, s.mapError(err)
 	}
+	//return response
 	reply := &pb.CheckResponse{
 		Result: resp.Result,
 		Reason: resp.Reason,
@@ -128,11 +130,7 @@ func (s *Service) mapError(err error) error {
 	case xlist.ErrUnavailable:
 		return status.Error(codes.Unavailable, err.Error())
 	default:
-		rpcerr := status.Error(codes.Internal, xlist.ErrInternal.Error())
-		if s.opts.disclosureErr {
-			rpcerr = status.Error(codes.Internal, err.Error())
-		}
-		return rpcerr
+		return status.Error(codes.Internal, xlist.ErrInternal.Error())
 	}
 }
 

@@ -5,7 +5,6 @@ package check
 import (
 	"context"
 	"errors"
-	"sync"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -26,11 +25,7 @@ type Client struct {
 	conn   *grpc.ClientConn
 	client pb.CheckClient
 	//control
-	closed, synced bool
-	mu, musync     sync.Mutex
-	//resources
-	provides  []bool
-	resources []xlist.Resource
+	closed bool
 	//cache
 	cache *cache
 }
@@ -38,7 +33,6 @@ type Client struct {
 type clientOpts struct {
 	logger    yalogi.Logger
 	closeConn bool
-	debugreq  bool
 	//cache opts
 	useCache     bool
 	ttl          int
@@ -59,13 +53,6 @@ type ClientOption func(*clientOpts)
 func CloseConnection(b bool) ClientOption {
 	return func(o *clientOpts) {
 		o.closeConn = b
-	}
-}
-
-// DebugRequests option enables debug messages in requests
-func DebugRequests(b bool) ClientOption {
-	return func(o *clientOpts) {
-		o.debugreq = b
 	}
 }
 
@@ -99,28 +86,17 @@ func SetCacheCleanUps(d time.Duration) ClientOption {
 }
 
 // NewClient returns a new grpc Client
-func NewClient(conn *grpc.ClientConn, resources []xlist.Resource, opt ...ClientOption) *Client {
+func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	opts := defaultClientOpts
 	for _, o := range opt {
 		o(&opts)
 	}
 	c := &Client{
-		opts:     opts,
-		logger:   opts.logger,
-		conn:     conn,
-		client:   pb.NewCheckClient(conn),
-		provides: make([]bool, len(xlist.Resources), len(xlist.Resources)),
+		opts:   opts,
+		logger: opts.logger,
+		conn:   conn,
+		client: pb.NewCheckClient(conn),
 	}
-	if len(resources) > 0 {
-		c.resources = xlist.ClearResourceDups(resources)
-		//set resource types that providess
-		for _, r := range c.resources {
-			c.provides[int(r)] = true
-		}
-		c.synced = true
-	}
-	//if no resources passed, it will get the resources supported
-	//by the checker in the first check -> synced = false
 	if opts.useCache {
 		c.cache = newCache(opts.ttl, opts.negativettl, opts.cacheCleanup)
 	}
@@ -130,22 +106,12 @@ func NewClient(conn *grpc.ClientConn, resources []xlist.Resource, opt ...ClientO
 // Check implements xlist.Checker interface
 func (c *Client) Check(ctx context.Context, name string, resource xlist.Resource) (xlist.Response, error) {
 	if c.closed {
-		return xlist.Response{}, xlist.ErrUnavailable
-	}
-	if c.opts.debugreq {
-		c.logger.Debugf("check(%s,%v)", name, resource)
-	}
-	if !c.synced {
-		if err := c.sync(ctx); err != nil {
-			c.logger.Warnf("sync(): %v", err)
-			return xlist.Response{}, c.mapError(err)
-		}
-	}
-	if !c.checks(resource) {
+		c.logger.Warnf("client.xlist.check: check(%s,%v): client is closed", name, resource)
 		return xlist.Response{}, xlist.ErrUnavailable
 	}
 	name, ctx, err := xlist.DoValidation(ctx, name, resource, false)
 	if err != nil {
+		c.logger.Warnf("client.xlist.check: check(%s,%v): %v", name, resource, err)
 		return xlist.Response{}, err
 	}
 	if c.opts.useCache {
@@ -155,10 +121,8 @@ func (c *Client) Check(ctx context.Context, name string, resource xlist.Resource
 		}
 	}
 	resp, err := c.doCheck(ctx, name, resource)
-	if c.opts.useCache {
-		if err == nil {
-			c.cache.set(name, resource, resp)
-		}
+	if c.opts.useCache && err == nil {
+		c.cache.set(name, resource, resp)
 	}
 	return resp, err
 }
@@ -166,53 +130,26 @@ func (c *Client) Check(ctx context.Context, name string, resource xlist.Resource
 // Resources implements xlist.Checker interface
 func (c *Client) Resources() []xlist.Resource {
 	if c.closed {
+		c.logger.Warnf("client.xlist.check: resources(): client is closed")
 		return nil
 	}
-	if c.opts.debugreq {
-		c.logger.Debugf("resources()")
-	}
-	if !c.synced {
-		c.sync(context.Background())
-	}
-	resources := make([]xlist.Resource, len(c.resources), len(c.resources))
-	copy(resources, c.resources)
-	return resources
+	return c.doResources(context.Background())
 }
 
 // Ping implements xlist.Checker interface
 func (c *Client) Ping() error {
 	if c.closed {
+		c.logger.Warnf("client.xlist.check: ping(): client is closed")
 		return errors.New("client is closed")
 	}
-	if c.opts.debugreq {
-		c.logger.Debugf("ping()")
-	}
 	return c.doPing(context.Background())
-}
-
-//sync resources
-func (c *Client) sync(ctx context.Context) error {
-	err := c.doPing(ctx)
-	if err == nil {
-		c.musync.Lock()
-		defer c.musync.Unlock()
-		if !c.synced {
-			c.resources = c.getResources(ctx)
-			//set resource types that providess
-			for _, r := range c.resources {
-				c.provides[int(r)] = true
-			}
-			c.synced = true
-			c.logger.Debugf("resources synced: %v", c.resources)
-		}
-	}
-	return err
 }
 
 func (c *Client) doCheck(ctx context.Context, name string, resource xlist.Resource) (xlist.Response, error) {
 	req := &pb.CheckRequest{Name: name, Resource: pb.Resource(resource)}
 	res, err := c.client.Check(ctx, req)
 	if err != nil {
+		c.logger.Warnf("client.xlist.check: check(%s,%v): %v", name, resource, err)
 		return xlist.Response{}, c.mapError(err)
 	}
 	r := xlist.Response{
@@ -222,14 +159,10 @@ func (c *Client) doCheck(ctx context.Context, name string, resource xlist.Resour
 	return r, nil
 }
 
-func (c *Client) doPing(ctx context.Context) error {
-	_, err := c.client.Ping(ctx, &empty.Empty{})
-	return err
-}
-
-func (c *Client) getResources(ctx context.Context) []xlist.Resource {
+func (c *Client) doResources(ctx context.Context) []xlist.Resource {
 	resp, err := c.client.Resources(ctx, &empty.Empty{})
 	if err != nil {
+		c.logger.Warnf("client.xlist.check: resources(): %v", err)
 		return []xlist.Resource{}
 	}
 	resources := make([]xlist.Resource, 0, len(resp.Resources))
@@ -239,11 +172,9 @@ func (c *Client) getResources(ctx context.Context) []xlist.Resource {
 	return xlist.ClearResourceDups(resources)
 }
 
-func (c *Client) checks(r xlist.Resource) bool {
-	if r.IsValid() {
-		return c.provides[int(r)]
-	}
-	return false
+func (c *Client) doPing(ctx context.Context) error {
+	_, err := c.client.Ping(ctx, &empty.Empty{})
+	return err
 }
 
 //mapping errors
@@ -270,24 +201,18 @@ func (c *Client) mapError(err error) error {
 
 //Flush cache if set
 func (c *Client) Flush() {
-	if !c.closed {
-		c.logger.Debugf("flushing cache")
-		if c.opts.useCache {
-			c.cache.flush()
-		}
+	if !c.closed && c.opts.useCache {
+		c.cache.flush()
 	}
 }
 
 //Close the client
 func (c *Client) Close() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	if c.closed {
 		return errors.New("client closed")
 	}
 	c.closed = true
-	c.logger.Debugf("closing connection")
-	if c.cache != nil {
+	if c.opts.useCache {
 		c.cache.flush()
 		c.cache = nil
 	}
