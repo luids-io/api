@@ -75,16 +75,19 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 // NotifyEvent implements event.Notifier interface
 func (c *Client) NotifyEvent(ctx context.Context, e event.Event) (string, error) {
 	if c.closed {
+		c.logger.Warnf("client.event.notify: notify(%v): client is closed", e.Code)
 		return "", event.ErrUnavailable
 	}
 	//create request
 	req, err := encoding.NotifyEventRequest(e)
 	if err != nil {
+		c.logger.Warnf("client.event.notify: notify(%v): %v", e.Code, err)
 		return "", c.mapError(event.ErrBadRequest)
 	}
 	//notify request
 	resp, err := c.client.NotifyEvent(ctx, req)
 	if err != nil {
+		c.logger.Warnf("client.event.notify: notify(%v): %v", e.Code, err)
 		return "", c.mapError(err)
 	}
 	return resp.GetEventID(), nil

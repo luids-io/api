@@ -7,6 +7,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
 	"github.com/luids-io/api/event"
@@ -57,10 +58,12 @@ func RegisterServer(server *grpc.Server, service *Service) {
 func (s *Service) SaveEvent(ctx context.Context, in *pb.SaveEventRequest) (*pb.SaveEventResponse, error) {
 	e, err := encoding.FromSaveEventRequest(in)
 	if err != nil {
+		s.logger.Warnf("service.event.archive: [peer=%s] save(%s): %v", getPeerAddr(ctx), e.ID, err)
 		return nil, s.mapError(event.ErrBadRequest)
 	}
 	sID, err := s.archiver.SaveEvent(ctx, e)
 	if err != nil {
+		s.logger.Warnf("service.event.archive: [peer=%s] save(%s): %v", getPeerAddr(ctx), e.ID, err)
 		return nil, s.mapError(err)
 	}
 	return &pb.SaveEventResponse{StorageID: sID}, nil
@@ -82,4 +85,12 @@ func (s *Service) mapError(err error) error {
 	default:
 		return status.Error(codes.Internal, event.ErrInternal.Error())
 	}
+}
+
+func getPeerAddr(ctx context.Context) (paddr string) {
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		paddr = p.Addr.String()
+	}
+	return
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
 	"github.com/luids-io/api/event"
@@ -58,10 +59,12 @@ func RegisterServer(server *grpc.Server, service *Service) {
 func (s *Service) ForwardEvent(ctx context.Context, in *pb.ForwardEventRequest) (*empty.Empty, error) {
 	e, err := encoding.FromForwardEventRequest(in)
 	if err != nil {
+		s.logger.Warnf("service.event.forward: [peer=%s] forward(%v,%s): %v", getPeerAddr(ctx), e.Code, e.ID, err)
 		return nil, s.mapError(event.ErrBadRequest)
 	}
 	err = s.forwarder.ForwardEvent(ctx, e)
 	if err != nil {
+		s.logger.Warnf("service.event.forward: [peer=%s] forward(%v,%s): %v", getPeerAddr(ctx), e.Code, e.ID, err)
 		return nil, s.mapError(err)
 	}
 	return &empty.Empty{}, nil
@@ -83,4 +86,12 @@ func (s *Service) mapError(err error) error {
 	default:
 		return status.Error(codes.Internal, event.ErrInternal.Error())
 	}
+}
+
+func getPeerAddr(ctx context.Context) (paddr string) {
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		paddr = p.Addr.String()
+	}
+	return
 }

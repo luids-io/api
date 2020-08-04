@@ -75,16 +75,19 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 // ForwardEvent implements event.Forwarder interface
 func (c *Client) ForwardEvent(ctx context.Context, e event.Event) error {
 	if c.closed {
+		c.logger.Warnf("client.event.forward: forward(%v,%s): client is closed", e.Code, e.ID)
 		return event.ErrUnavailable
 	}
 	//create request
 	req, err := encoding.ForwardEventRequest(e)
 	if err != nil {
+		c.logger.Warnf("client.event.forward: forward(%v,%s): %v", e.Code, e.ID, err)
 		return c.mapError(event.ErrBadRequest)
 	}
 	//notify request
 	_, err = c.client.ForwardEvent(ctx, req)
 	if err != nil {
+		c.logger.Warnf("client.event.forward: forward(%v,%s): %v", e.Code, e.ID, err)
 		return c.mapError(err)
 	}
 	return nil

@@ -7,6 +7,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
 	"github.com/luids-io/api/event"
@@ -57,10 +58,12 @@ func RegisterServer(server *grpc.Server, service *Service) {
 func (s *Service) NotifyEvent(ctx context.Context, in *pb.NotifyEventRequest) (*pb.NotifyEventResponse, error) {
 	e, err := encoding.FromNotifyEventRequest(in)
 	if err != nil {
+		s.logger.Warnf("service.event.notify: [peer=%s] notify(%v): %v", getPeerAddr(ctx), e.Code, err)
 		return nil, s.mapError(event.ErrBadRequest)
 	}
 	eventID, err := s.notifier.NotifyEvent(ctx, e)
 	if err != nil {
+		s.logger.Warnf("service.event.notify: [peer=%s] notify(%v): %v", getPeerAddr(ctx), e.Code, err)
 		return nil, s.mapError(err)
 	}
 	return &pb.NotifyEventResponse{EventID: eventID}, nil
@@ -82,4 +85,12 @@ func (s *Service) mapError(err error) error {
 	default:
 		return status.Error(codes.Internal, event.ErrInternal.Error())
 	}
+}
+
+func getPeerAddr(ctx context.Context) (paddr string) {
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		paddr = p.Addr.String()
+	}
+	return
 }

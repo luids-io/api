@@ -29,6 +29,9 @@ func ClientBuilder(opt ...ClientOption) apiservice.BuildFn {
 		if err != nil {
 			return nil, err
 		}
+		if def.Log {
+			opt = append(opt, SetLogger(logger))
+		}
 		//creates client
 		client := NewClient(dial, opt...)
 		return client, nil
