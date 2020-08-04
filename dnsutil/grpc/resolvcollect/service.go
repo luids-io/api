@@ -61,15 +61,13 @@ func (s *Service) Collect(ctx context.Context, req *pb.ResolvCollectRequest) (*e
 	//parse request
 	client, name, resolved, err := parseRequest(req)
 	if err != nil {
-		paddr := getPeerAddr(ctx)
-		s.logger.Warnf("service.dnsutil.resolvcollect: [peer=%s] collect(%v,%s,%v): %v", paddr, client, name, resolved, err)
+		s.logger.Warnf("service.dnsutil.resolvcollect: [peer=%s] collect(%v,%s,%v): %v", getPeerAddr(ctx), client, name, resolved, err)
 		return nil, s.mapError(dnsutil.ErrBadRequest)
 	}
 	//do request
 	err = s.collector.Collect(ctx, client, name, resolved)
 	if err != nil {
-		paddr := getPeerAddr(ctx)
-		s.logger.Warnf("service.dnsutil.resolvcollect: [peer=%s] collect(%v,%s,%v): %v", paddr, client, name, resolved, err)
+		s.logger.Warnf("service.dnsutil.resolvcollect: [peer=%s] collect(%v,%s,%v): %v", getPeerAddr(ctx), client, name, resolved, err)
 		return nil, s.mapError(err)
 	}
 	//return response

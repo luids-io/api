@@ -122,7 +122,7 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 // Check implements dnsutil.ResolvChecker interface
 func (c *Client) Check(ctx context.Context, client, resolved net.IP, name string) (dnsutil.CacheResponse, error) {
 	if c.closed {
-		c.logger.Warnf("client.dnsutil.resolvcheck: client is closed")
+		c.logger.Warnf("client.dnsutil.resolvcheck: check(%v,%v,%s): client is closed", client, resolved, name)
 		return dnsutil.CacheResponse{}, dnsutil.ErrUnavailable
 	}
 	if c.opts.useCache {
@@ -163,12 +163,23 @@ func (c *Client) mapError(err error) error {
 	}
 }
 
+//Flush cache if set
+func (c *Client) Flush() {
+	if !c.closed && c.opts.useCache {
+		c.cache.flush()
+	}
+}
+
 //Close closes the client
 func (c *Client) Close() error {
 	if c.closed {
 		return errors.New("client closed")
 	}
 	c.closed = true
+	if c.opts.useCache {
+		c.cache.flush()
+		c.cache = nil
+	}
 	if c.opts.closeConn {
 		return c.conn.Close()
 	}

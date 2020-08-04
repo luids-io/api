@@ -61,15 +61,13 @@ func (s *Service) Check(ctx context.Context, in *pb.ResolvCheckRequest) (*pb.Res
 	//parse request
 	client, resolved, name, err := parseRequest(in)
 	if err != nil {
-		paddr := getPeerAddr(ctx)
-		s.logger.Warnf("service.dnsutil.resolvcheck: [peer=%s] check(%v,%v,%s): %v", paddr, client, resolved, name, err)
+		s.logger.Warnf("service.dnsutil.resolvcheck: [peer=%s] check(%v,%v,%s): %v", getPeerAddr(ctx), client, resolved, name, err)
 		return nil, s.mapError(dnsutil.ErrBadRequest)
 	}
 	//do request
 	resp, err := s.checker.Check(ctx, client, resolved, name)
 	if err != nil {
-		paddr := getPeerAddr(ctx)
-		s.logger.Warnf("service.dnsutil.resolvcheck: [peer=%s] check(%v,%v,%s): %v", paddr, client, resolved, name, err)
+		s.logger.Warnf("service.dnsutil.resolvcheck: [peer=%s] check(%v,%v,%s): %v", getPeerAddr(ctx), client, resolved, name, err)
 		return nil, s.mapError(err)
 	}
 	//return response
