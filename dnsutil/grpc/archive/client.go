@@ -76,6 +76,7 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 // SaveResolv implements dnsutil.Archiver interface
 func (c *Client) SaveResolv(ctx context.Context, data dnsutil.ResolvData) (string, error) {
 	if c.closed {
+		c.logger.Warnf("client.dnsutil.archive: saveresolv(%s,%v): client is closed", data.Name, data.Client)
 		return "", dnsutil.ErrUnavailable
 	}
 	//create request
@@ -100,6 +101,7 @@ func (c *Client) SaveResolv(ctx context.Context, data dnsutil.ResolvData) (strin
 	//do save
 	resp, err := c.client.SaveResolv(ctx, req)
 	if err != nil {
+		c.logger.Warnf("client.dnsutil.archive: saveresolv(%s,%v): %v", data.Name, data.Client, err)
 		return "", c.mapError(err)
 	}
 	return resp.GetId(), nil

@@ -11,6 +11,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
 	"github.com/luids-io/api/dnsutil"
@@ -61,11 +62,13 @@ func (s *Service) SaveResolv(ctx context.Context, req *pb.SaveResolvRequest) (*p
 	//parse request
 	data, err := parseRequest(req)
 	if err != nil {
+		s.logger.Warnf("service.dnsutil.archive: [peer=%s] saveresolv(%s,%v): %v", getPeerAddr(ctx), data.Name, data.Client, err)
 		return nil, s.mapError(dnsutil.ErrBadRequest)
 	}
 	//do request
 	newid, err := s.archiver.SaveResolv(ctx, data)
 	if err != nil {
+		s.logger.Warnf("service.dnsutil.archive: [peer=%s] saveresolv(%s,%v): %v", getPeerAddr(ctx), data.Name, data.Client, err)
 		return nil, s.mapError(err)
 	}
 	//return response
@@ -116,4 +119,12 @@ func (s *Service) mapError(err error) error {
 	default:
 		return status.Error(codes.Internal, dnsutil.ErrInternal.Error())
 	}
+}
+
+func getPeerAddr(ctx context.Context) (paddr string) {
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		paddr = p.Addr.String()
+	}
+	return
 }

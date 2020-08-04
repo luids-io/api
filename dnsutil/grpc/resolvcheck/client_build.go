@@ -35,6 +35,9 @@ func ClientBuilder(opt ...ClientOption) apiservice.BuildFn {
 		if err != nil {
 			return nil, err
 		}
+		if def.Log {
+			opt = append(opt, SetLogger(logger))
+		}
 		if len(def.Opts) > 0 {
 			// parse and set client map options
 			cm, err := parseClientMapOpts(def.Opts)
