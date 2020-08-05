@@ -89,6 +89,15 @@ func SetCache(ttl, negativettl int) ClientOption {
 	}
 }
 
+// SetCacheCleanUps sets interval between cache cleanups
+func SetCacheCleanUps(d time.Duration) ClientOption {
+	return func(o *clientOpts) {
+		if d > 0 {
+			o.cacheCleanup = d
+		}
+	}
+}
+
 // NewClient returns a new grpc Client
 func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	opts := defaultClientOpts
@@ -113,6 +122,8 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 // GetServerChain implements tlsutil.Notary interface
 func (c *Client) GetServerChain(ctx context.Context, ip net.IP, port int, sni, profile string) (string, error) {
 	if c.closed {
+		c.logger.Warnf("client.tlsutil.notary: getserverchain(%v,%v,%s,%s): client is closed",
+			ip, port, sni, profile)
 		return "", tlsutil.ErrUnavailable
 	}
 	if c.opts.useCache {
@@ -121,16 +132,21 @@ func (c *Client) GetServerChain(ctx context.Context, ip net.IP, port int, sni, p
 			return chain, nil
 		}
 	}
+	//prepare request
 	req := &pb.GetServerChainRequest{
 		Ip:      ip.String(),
 		Port:    int32(port),
 		Sni:     sni,
 		Profile: profile,
 	}
+	//do request
 	resp, err := c.client.GetServerChain(ctx, req)
 	if err != nil {
+		c.logger.Warnf("client.tlsutil.notary: getserverchain(%v,%v,%s,%s): %v",
+			ip, port, sni, profile, err)
 		return "", c.mapError(err)
 	}
+	//get response
 	chain := resp.GetChain()
 	if c.opts.useCache {
 		c.scache.set(ip, port, sni, profile, chain)
@@ -141,6 +157,8 @@ func (c *Client) GetServerChain(ctx context.Context, ip net.IP, port int, sni, p
 // SetServerChain implements tlsutil.Notary interface
 func (c *Client) SetServerChain(ctx context.Context, ip net.IP, port int, sni, profile string, chain string) error {
 	if c.closed {
+		c.logger.Warnf("client.tlsutil.notary: setserverchain(%v,%v,%s,%s,%s): client is closed",
+			ip, port, sni, profile, chain)
 		return tlsutil.ErrUnavailable
 	}
 	if c.opts.useCache {
@@ -152,6 +170,7 @@ func (c *Client) SetServerChain(ctx context.Context, ip net.IP, port int, sni, p
 			return nil
 		}
 	}
+	//prepare request
 	req := &pb.SetServerChainRequest{
 		Ip:      ip.String(),
 		Port:    int32(port),
@@ -159,8 +178,11 @@ func (c *Client) SetServerChain(ctx context.Context, ip net.IP, port int, sni, p
 		Profile: profile,
 		Chain:   chain,
 	}
+	//do request
 	_, err := c.client.SetServerChain(ctx, req)
 	if err != nil {
+		c.logger.Warnf("client.tlsutil.notary: setserverchain(%v,%v,%s,%s): %v",
+			ip, port, sni, profile, chain, err)
 		return c.mapError(err)
 	}
 	if c.opts.useCache {
@@ -172,6 +194,7 @@ func (c *Client) SetServerChain(ctx context.Context, ip net.IP, port int, sni, p
 // VerifyChain implements tlsutil.Notary interface
 func (c *Client) VerifyChain(ctx context.Context, chain string, dnsname string, force bool) (tlsutil.VerifyResponse, error) {
 	if c.closed {
+		c.logger.Warnf("client.tlsutil.notary: verifychain(%s,%s,%v): client is closed", chain, dnsname, force)
 		return tlsutil.VerifyResponse{}, tlsutil.ErrUnavailable
 	}
 	if c.opts.useCache && !force {
@@ -189,6 +212,8 @@ func (c *Client) VerifyChain(ctx context.Context, chain string, dnsname string, 
 	//do verify
 	res, err := c.client.VerifyChain(ctx, req)
 	if err != nil {
+		c.logger.Warnf("client.tlsutil.notary: verifychain(%s,%s,%v): %v",
+			chain, dnsname, force, err)
 		return tlsutil.VerifyResponse{}, c.mapError(err)
 	}
 	//get response
@@ -206,6 +231,7 @@ func (c *Client) VerifyChain(ctx context.Context, chain string, dnsname string, 
 // UploadCerts implements tlsutil.Notary interface
 func (c *Client) UploadCerts(ctx context.Context, certs []*x509.Certificate) (string, error) {
 	if c.closed {
+		c.logger.Warnf("client.tlsutil.notary: uploadcerts(): client is closed")
 		return "", tlsutil.ErrUnavailable
 	}
 	var chain, cachekey string
@@ -225,6 +251,7 @@ func (c *Client) UploadCerts(ctx context.Context, certs []*x509.Certificate) (st
 	//do upload
 	res, err := c.client.UploadCerts(ctx, req)
 	if err != nil {
+		c.logger.Warnf("client.tlsutil.notary: uploadcerts(): %v", err)
 		return "", c.mapError(err)
 	}
 	//return response
@@ -238,6 +265,7 @@ func (c *Client) UploadCerts(ctx context.Context, certs []*x509.Certificate) (st
 // DownloadCerts implements tlsutil.Notary interface
 func (c *Client) DownloadCerts(ctx context.Context, chain string) ([]*x509.Certificate, error) {
 	if c.closed {
+		c.logger.Warnf("client.tlsutil.notary: downloadcerts(%s): client is closed", chain)
 		return nil, tlsutil.ErrUnavailable
 	}
 	if c.opts.useCache {
@@ -251,6 +279,7 @@ func (c *Client) DownloadCerts(ctx context.Context, chain string) ([]*x509.Certi
 	//do download
 	res, err := c.client.DownloadCerts(ctx, req)
 	if err != nil {
+		c.logger.Warnf("client.tlsutil.notary: downloadcerts(%s): %v", chain, err)
 		return nil, c.mapError(err)
 	}
 	//process response
@@ -261,7 +290,7 @@ func (c *Client) DownloadCerts(ctx context.Context, chain string) ([]*x509.Certi
 		for _, rawcert := range rawcerts {
 			cert, err := x509.ParseCertificate(rawcert)
 			if err != nil {
-				c.logger.Errorf("parsing cert: %v", err)
+				c.logger.Warnf("client.tlsutil.notary: downloadcerts(%s): parsing cert: %v", chain, err)
 				return nil, tlsutil.ErrInternal
 			}
 			certs = append(certs, cert)

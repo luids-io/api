@@ -5,6 +5,7 @@ package notary
 import (
 	"context"
 	"crypto/x509"
+	"errors"
 	"net"
 
 	"google.golang.org/grpc"
@@ -58,24 +59,18 @@ func RegisterServer(server *grpc.Server, service *Service) {
 
 // GetServerChain implements Service interface
 func (s *Service) GetServerChain(ctx context.Context, in *pb.GetServerChainRequest) (*pb.GetServerChainResponse, error) {
-	paddr := getPeerAddr(ctx)
 	// prepare request
-	ip := net.ParseIP(in.GetIp())
-	if ip == nil {
-		s.logger.Warnf("get server chain '%s': ip invalid", paddr)
+	ip, port, sni, profile, err := parseGetServerChainRequest(in)
+	if err != nil {
+		s.logger.Warnf("service.tlsutil.notary: [peer=%s] getserverchain(%s,%v,%s,%s): %v",
+			getPeerAddr(ctx), in.GetIp(), in.GetPort(), in.GetSni(), in.GetProfile(), err)
 		return nil, s.mapError(tlsutil.ErrBadRequest)
 	}
-	port := int(in.GetPort())
-	if port <= 0 {
-		s.logger.Warnf("get server chain '%s': port invalid", paddr)
-		return nil, s.mapError(tlsutil.ErrBadRequest)
-	}
-	sni := in.GetSni()
-	profile := in.GetProfile()
 	// do request
 	chain, err := s.notary.GetServerChain(ctx, ip, port, sni, profile)
 	if err != nil {
-		s.logger.Warnf("get server chain '%s': %v", paddr, err)
+		s.logger.Warnf("service.tlsutil.notary: [peer=%s] getserverchain(%v,%v,%s,%s): %v",
+			getPeerAddr(ctx), ip, port, sni, profile, err)
 		return nil, s.mapError(err)
 	}
 	// response
@@ -84,29 +79,18 @@ func (s *Service) GetServerChain(ctx context.Context, in *pb.GetServerChainReque
 
 // SetServerChain implements Service interface
 func (s *Service) SetServerChain(ctx context.Context, in *pb.SetServerChainRequest) (*pb.SetServerChainResponse, error) {
-	paddr := getPeerAddr(ctx)
 	// prepare request
-	ip := net.ParseIP(in.GetIp())
-	if ip == nil {
-		s.logger.Warnf("set server chain '%s': ip invalid", paddr)
-		return nil, s.mapError(tlsutil.ErrBadRequest)
-	}
-	port := int(in.GetPort())
-	if port <= 0 {
-		s.logger.Warnf("set server chain '%s': port invalid", paddr)
-		return nil, s.mapError(tlsutil.ErrBadRequest)
-	}
-	sni := in.GetSni()
-	profile := in.GetProfile()
-	chain := in.GetChain()
-	if chain == "" {
-		s.logger.Warnf("set server chain '%s': chain is empty", paddr)
+	ip, port, sni, profile, chain, err := parseSetServerChainRequest(in)
+	if err != nil {
+		s.logger.Warnf("service.tlsutil.notary: [peer=%s] setserverchain(%s,%v,%s,%s,%s): %v",
+			getPeerAddr(ctx), in.GetIp(), in.GetPort(), in.GetSni(), in.GetProfile(), in.GetChain(), err)
 		return nil, s.mapError(tlsutil.ErrBadRequest)
 	}
 	// do request
-	err := s.notary.SetServerChain(ctx, ip, port, sni, profile, chain)
+	err = s.notary.SetServerChain(ctx, ip, port, sni, profile, chain)
 	if err != nil {
-		s.logger.Warnf("set server chain '%s': %v", paddr, err)
+		s.logger.Warnf("service.tlsutil.notary: [peer=%s] setserverchain(%v,%v,%s,%s,%s): %v",
+			getPeerAddr(ctx), ip, port, sni, profile, chain, err)
 		return nil, s.mapError(err)
 	}
 	// response
@@ -115,11 +99,11 @@ func (s *Service) SetServerChain(ctx context.Context, in *pb.SetServerChainReque
 
 // VerifyChain implements Service interface
 func (s *Service) VerifyChain(ctx context.Context, in *pb.VerifyChainRequest) (*pb.VerifyChainResponse, error) {
-	paddr := getPeerAddr(ctx)
 	// prepare request
 	chain := in.GetChain()
 	if chain == "" {
-		s.logger.Warnf("verify chain '%s': chain is empty", paddr)
+		s.logger.Warnf("service.tlsutil.notary: [peer=%s] verifychain(%s,%s,%v): chain is empty",
+			getPeerAddr(ctx), chain, in.GetDnsname(), in.GetForce())
 		return nil, s.mapError(tlsutil.ErrBadRequest)
 	}
 	dnsname := in.GetDnsname()
@@ -127,7 +111,8 @@ func (s *Service) VerifyChain(ctx context.Context, in *pb.VerifyChainRequest) (*
 	// do request
 	response, err := s.notary.VerifyChain(ctx, chain, dnsname, force)
 	if err != nil {
-		s.logger.Warnf("verify chain '%s': %v", paddr, err)
+		s.logger.Warnf("service.tlsutil.notary: [peer=%s] verifychain(%s,%s,%v): %v",
+			getPeerAddr(ctx), chain, in.GetDnsname(), in.GetForce(), err)
 		return nil, s.mapError(err)
 	}
 	// response
@@ -141,18 +126,17 @@ func (s *Service) VerifyChain(ctx context.Context, in *pb.VerifyChainRequest) (*
 
 // UploadCerts implements Service interface
 func (s *Service) UploadCerts(ctx context.Context, in *pb.UploadCertsRequest) (*pb.UploadCertsResponse, error) {
-	paddr := getPeerAddr(ctx)
 	// prepare request
 	rawcerts := in.GetCerts()
 	if len(rawcerts) == 0 {
-		s.logger.Warnf("upload certs '%s': certs is empty", paddr)
+		s.logger.Warnf("service.tlsutil.notary: [peer=%s] uploadcerts(): certs is empty", getPeerAddr(ctx))
 		return nil, s.mapError(tlsutil.ErrBadRequest)
 	}
 	certs := make([]*x509.Certificate, 0, len(rawcerts))
 	for _, rawcert := range rawcerts {
 		cert, err := x509.ParseCertificate(rawcert)
 		if err != nil {
-			s.logger.Warnf("upload certs '%s': %v", paddr, err)
+			s.logger.Warnf("service.tlsutil.notary: [peer=%s] uploadcerts(): %v", getPeerAddr(ctx), err)
 			return nil, s.mapError(tlsutil.ErrBadRequest)
 		}
 		certs = append(certs, cert)
@@ -160,7 +144,7 @@ func (s *Service) UploadCerts(ctx context.Context, in *pb.UploadCertsRequest) (*
 	// do request
 	chain, err := s.notary.UploadCerts(ctx, certs)
 	if err != nil {
-		s.logger.Warnf("upload certs '%s': %v", paddr, err)
+		s.logger.Warnf("service.tlsutil.notary: [peer=%s] uploadcerts(): %v", getPeerAddr(ctx), err)
 		return nil, s.mapError(err)
 	}
 	// response
@@ -169,17 +153,16 @@ func (s *Service) UploadCerts(ctx context.Context, in *pb.UploadCertsRequest) (*
 
 // DownloadCerts implements Service interface
 func (s *Service) DownloadCerts(ctx context.Context, in *pb.DownloadCertsRequest) (*pb.DownloadCertsResponse, error) {
-	paddr := getPeerAddr(ctx)
 	// prepare request
 	chain := in.GetChain()
 	if chain == "" {
-		s.logger.Warnf("download certs '%s': chain is empty", paddr)
+		s.logger.Warnf("service.tlsutil.notary: [peer=%s] downloadcerts(): chain is empty", getPeerAddr(ctx))
 		return nil, s.mapError(tlsutil.ErrBadRequest)
 	}
 	// do request
 	certs, err := s.notary.DownloadCerts(ctx, chain)
 	if err != nil {
-		s.logger.Warnf("download certs '%s': %v", paddr, err)
+		s.logger.Warnf("service.tlsutil.notary: [peer=%s] downloadcerts(%s): %v", getPeerAddr(ctx), chain, err)
 		return nil, s.mapError(err)
 	}
 	// response
@@ -217,6 +200,42 @@ func getPeerAddr(ctx context.Context) (paddr string) {
 	p, ok := peer.FromContext(ctx)
 	if ok {
 		paddr = p.Addr.String()
+	}
+	return
+}
+
+func parseGetServerChainRequest(in *pb.GetServerChainRequest) (ip net.IP, port int, sni string, profile string, err error) {
+	ip = net.ParseIP(in.GetIp())
+	if ip == nil {
+		err = errors.New("invalid ip")
+		return
+	}
+	port = int(in.GetPort())
+	if port <= 0 {
+		err = errors.New("invalid port")
+		return
+	}
+	sni = in.GetSni()
+	profile = in.GetProfile()
+	return
+}
+
+func parseSetServerChainRequest(in *pb.SetServerChainRequest) (ip net.IP, port int, sni string, profile string, chain string, err error) {
+	ip = net.ParseIP(in.GetIp())
+	if ip == nil {
+		err = errors.New("invalid ip")
+		return
+	}
+	port = int(in.GetPort())
+	if port <= 0 {
+		err = errors.New("invalid port")
+		return
+	}
+	sni = in.GetSni()
+	profile = in.GetProfile()
+	chain = in.GetChain()
+	if chain == "" {
+		err = errors.New("chain is empty")
 	}
 	return
 }
