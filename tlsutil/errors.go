@@ -6,17 +6,17 @@ import "errors"
 
 // Some standard errors returned by interfaces
 var (
-	ErrCanceledRequest = errors.New("canceled request")
-	ErrBadRequest      = errors.New("bad request")
-	ErrNotSupported    = errors.New("not supported")
-	ErrUnavailable     = errors.New("not available")
-	ErrInternal        = errors.New("internal error")
+	ErrCanceledRequest = errors.New("tlsutil: canceled request")
+	ErrBadRequest      = errors.New("tlsutil: bad request")
+	ErrNotSupported    = errors.New("tlsutil: not supported")
+	ErrUnavailable     = errors.New("tlsutil: not available")
+	ErrInternal        = errors.New("tlsutil: internal error")
 	// specific interface Analyze
-	ErrTimeOutOfSync    = errors.New("time out of sync")
-	ErrStreamNotFound   = errors.New("stream not found")
-	ErrDuplicatedStream = errors.New("duplicated stream")
+	ErrTimeOutOfSync    = errors.New("tlsutil: time out of sync")
+	ErrStreamNotFound   = errors.New("tlsutil: stream not found")
+	ErrDuplicatedStream = errors.New("tlsutil: duplicated stream")
 	// specific interface Notary
-	ErrDialingWithServer = errors.New("dialing with server")
-	ErrChainNotFound     = errors.New("chain not found")
-	ErrCertNotFound      = errors.New("certificate not found")
+	ErrDialingWithServer = errors.New("tlsutil: dialing with server")
+	ErrChainNotFound     = errors.New("tlsutil: chain not found")
+	ErrCertNotFound      = errors.New("tlsutil: certificate not found")
 )
