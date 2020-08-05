@@ -84,14 +84,17 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 // SaveConnection implements tlsutil.Archiver interface
 func (c *Client) SaveConnection(ctx context.Context, data *tlsutil.ConnectionData) (string, error) {
 	if !c.started {
+		c.logger.Warnf("client.tlsutil.archive: saveconnection(): client is closed")
 		return "", tlsutil.ErrUnavailable
 	}
 	req, err := connectionToRequest(data)
 	if err != nil {
+		c.logger.Warnf("client.tlsutil.archive: saveconnection(): %v", err)
 		return "", c.mapError(err)
 	}
 	resp, err := c.client.SaveConnection(ctx, req)
 	if err != nil {
+		c.logger.Warnf("client.tlsutil.archive: saveconnection(%s): %v", data.ID, err)
 		return "", c.mapError(err)
 	}
 	return resp.GetId(), nil
@@ -100,14 +103,17 @@ func (c *Client) SaveConnection(ctx context.Context, data *tlsutil.ConnectionDat
 // SaveCertificate implements tlsutil.Archiver interface
 func (c *Client) SaveCertificate(ctx context.Context, data *tlsutil.CertificateData) (string, error) {
 	if !c.started {
+		c.logger.Warnf("client.tlsutil.archive: savecertificate(): client is closed")
 		return "", tlsutil.ErrUnavailable
 	}
 	req, err := certificateToRequest(data)
 	if err != nil {
+		c.logger.Warnf("client.tlsutil.archive: savecertificate(): %v", err)
 		return "", c.mapError(err)
 	}
 	resp, err := c.client.SaveCertificate(ctx, req)
 	if err != nil {
+		c.logger.Warnf("client.tlsutil.archive: savecertificate(%s): %v", data.Digest, err)
 		return "", c.mapError(err)
 	}
 	return resp.GetId(), nil
@@ -116,6 +122,7 @@ func (c *Client) SaveCertificate(ctx context.Context, data *tlsutil.CertificateD
 // StoreRecord implements tlsutil.Archiver interface
 func (c *Client) StoreRecord(data *tlsutil.RecordData) error {
 	if !c.started {
+		c.logger.Warnf("client.tlsutil.archive: storerecord(): client is closed")
 		return tlsutil.ErrUnavailable
 	}
 	req := recordToRequest(data)
@@ -138,7 +145,7 @@ func (c *Client) start() {
 
 func (c *Client) processErrs() {
 	for e := range c.errs {
-		c.logger.Warnf("%v", e)
+		c.logger.Warnf("client.tlsutil.archive: %v", e)
 	}
 }
 

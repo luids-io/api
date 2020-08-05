@@ -56,17 +56,16 @@ func RegisterServer(server *grpc.Server, service *Service) {
 
 // SaveConnection implements interface
 func (s *Service) SaveConnection(ctx context.Context, req *pb.SaveConnectionRequest) (*pb.SaveConnectionResponse, error) {
-	paddr := getPeerAddr(ctx)
 	//parse request
 	data, err := connectionFromRequest(req)
 	if err != nil {
-		s.logger.Warnf("invalid request from '%s': %v", paddr, err)
+		s.logger.Warnf("service.tlsutil.archive: [peer=%s] saveconnection(): %v", getPeerAddr(ctx), err)
 		return nil, s.mapError(tlsutil.ErrBadRequest)
 	}
 	//do request
 	newid, err := s.archiver.SaveConnection(ctx, data)
 	if err != nil {
-		s.logger.Warnf("saving connection from '%s': %v", paddr, err)
+		s.logger.Warnf("service.tlsutil.archive: [peer=%s] saveconnection(%s): %v", getPeerAddr(ctx), data.ID, err)
 		return nil, s.mapError(err)
 	}
 	//return response
@@ -75,17 +74,16 @@ func (s *Service) SaveConnection(ctx context.Context, req *pb.SaveConnectionRequ
 
 // SaveCertificate implements interface
 func (s *Service) SaveCertificate(ctx context.Context, req *pb.SaveCertificateRequest) (*pb.SaveCertificateResponse, error) {
-	paddr := getPeerAddr(ctx)
 	//parse request
 	data, err := certificateFromRequest(req)
 	if err != nil {
-		s.logger.Warnf("invalid request from '%s': %v", paddr, err)
+		s.logger.Warnf("service.tlsutil.archive: [peer=%s] savecertificate(): %v", getPeerAddr(ctx), err)
 		return nil, s.mapError(tlsutil.ErrBadRequest)
 	}
 	//do request
 	newid, err := s.archiver.SaveCertificate(ctx, data)
 	if err != nil {
-		s.logger.Warnf("saving connection from '%s': %v", paddr, err)
+		s.logger.Warnf("service.tlsutil.archive: [peer=%s] savecertificate(%s): %v", getPeerAddr(ctx), data.Digest, err)
 		return nil, s.mapError(err)
 	}
 	//return response
@@ -100,12 +98,17 @@ func (s *Service) StreamRecords(stream pb.Archive_StreamRecordsServer) error {
 		if err == io.EOF {
 			return nil
 		} else if err != nil {
+			s.logger.Warnf("service.tlsutil.archive: [peer=%s] streamrecords(): error receiving: %v", paddr, err)
 			return err
 		}
-		record := recordFromRequest(request)
+		record, err := recordFromRequest(request)
+		if err != nil {
+			s.logger.Warnf("service.tlsutil.archive: [peer=%s] streamrecords(): %v", paddr, err)
+			return s.mapError(tlsutil.ErrBadRequest)
+		}
 		err = s.archiver.StoreRecord(record)
 		if err != nil {
-			s.logger.Warnf("saving stream record from '%s': %v", paddr, err)
+			s.logger.Warnf("service.tlsutil.archive: [peer=%s] streamrecords(): %v", paddr, err)
 			return s.mapError(err)
 		}
 	}

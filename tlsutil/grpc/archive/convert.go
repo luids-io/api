@@ -3,6 +3,8 @@
 package archive
 
 import (
+	"errors"
+
 	"github.com/luids-io/api/tlsutil"
 	"github.com/luids-io/api/tlsutil/grpc/encoding"
 	"github.com/luids-io/api/tlsutil/grpc/pb"
@@ -15,12 +17,11 @@ func certificateToRequest(cert *tlsutil.CertificateData) (*pb.SaveCertificateReq
 }
 
 func certificateFromRequest(req *pb.SaveCertificateRequest) (*tlsutil.CertificateData, error) {
-	var cert *tlsutil.CertificateData
 	c := req.GetCertificate()
-	if c != nil {
-		cert = encoding.CertificateData(c)
+	if c == nil {
+		return nil, errors.New("certificate data is empty")
 	}
-	return cert, nil
+	return encoding.CertificateData(c), nil
 }
 
 func connectionToRequest(cn *tlsutil.ConnectionData) (*pb.SaveConnectionRequest, error) {
@@ -30,12 +31,11 @@ func connectionToRequest(cn *tlsutil.ConnectionData) (*pb.SaveConnectionRequest,
 }
 
 func connectionFromRequest(req *pb.SaveConnectionRequest) (*tlsutil.ConnectionData, error) {
-	var cn *tlsutil.ConnectionData
 	c := req.GetConnection()
-	if c != nil {
-		cn = encoding.ConnectionData(c)
+	if c == nil {
+		return nil, errors.New("connection data is empty")
 	}
-	return cn, nil
+	return encoding.ConnectionData(c), nil
 }
 
 func recordToRequest(r *tlsutil.RecordData) *pb.SaveRecordRequest {
@@ -44,11 +44,10 @@ func recordToRequest(r *tlsutil.RecordData) *pb.SaveRecordRequest {
 	return req
 }
 
-func recordFromRequest(req *pb.SaveRecordRequest) *tlsutil.RecordData {
-	var record *tlsutil.RecordData
+func recordFromRequest(req *pb.SaveRecordRequest) (*tlsutil.RecordData, error) {
 	r := req.GetRecord()
-	if r != nil {
-		record = encoding.RecordData(r)
+	if r == nil {
+		return nil, errors.New("record data is empty")
 	}
-	return record
+	return encoding.RecordData(r), nil
 }
