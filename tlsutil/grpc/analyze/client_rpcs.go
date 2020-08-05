@@ -4,7 +4,9 @@ package analyze
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"sync"
 
 	"google.golang.org/grpc"
@@ -76,7 +78,11 @@ func (r *rpcClient) send(req *pb.SendMessageRequest) error {
 	//send
 	err := r.stream.Send(req)
 	if err != nil {
-		err = fmt.Errorf("sending error: %v", err)
+		if err == io.EOF {
+			err = errors.New("connection is closed")
+		} else {
+			err = fmt.Errorf("sending error: %v", err)
+		}
 		r.close()
 	}
 	return err
