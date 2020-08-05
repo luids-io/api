@@ -13,8 +13,10 @@ var (
 	ErrInternal        = errors.New("tlsutil: internal error")
 	// specific interface Analyze
 	ErrTimeOutOfSync    = errors.New("tlsutil: time out of sync")
+	ErrMsgOutOfOrder    = errors.New("tlsutil: message time out of order")
 	ErrStreamNotFound   = errors.New("tlsutil: stream not found")
 	ErrDuplicatedStream = errors.New("tlsutil: duplicated stream")
+	ErrAnalyzerExists   = errors.New("tlsutil: analyzer with name exists")
 	// specific interface Notary
 	ErrDialingWithServer = errors.New("tlsutil: dialing with server")
 	ErrChainNotFound     = errors.New("tlsutil: chain not found")

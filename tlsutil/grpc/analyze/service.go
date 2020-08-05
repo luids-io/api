@@ -71,21 +71,23 @@ func RegisterServer(server *grpc.Server, service *Service) {
 func (s *Service) SendMessages(stream pb.Analyze_SendMessagesServer) error {
 	paddr := getPeerAddr(stream.Context())
 	if paddr == "" {
-		s.logger.Errorf("can't get peer address")
+		s.logger.Errorf("service.tlsutil.analyze: sendmessages(): can't get peer address")
 		return status.Errorf(codes.Internal, tlsutil.ErrInternal.Error())
 	}
 	analyzer, err := s.factory.NewAnalyzer(paddr)
 	if err != nil {
+		s.logger.Warnf("service.tlsutil.analyze: [peer=%s] sendmessages(): %v", paddr, err)
 		return s.mapError(err)
 	}
 	defer analyzer.Close()
 
+	var lastTs time.Time
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
 			return nil
 		} else if err != nil {
-			s.logger.Warnf("receiving from '%s': %v", paddr, err)
+			s.logger.Warnf("service.tlsutil.analyze: [peer=%s] sendmessages(): error receiving: %v", paddr, err)
 			return err
 		}
 		msg := encoding.MessageRequest(req)
@@ -93,16 +95,26 @@ func (s *Service) SendMessages(stream pb.Analyze_SendMessagesServer) error {
 		if msg.Data != nil {
 			now := time.Now()
 			ts := msg.Data.Timestamp
+			//check if out of order
+			if !lastTs.IsZero() && lastTs.After(ts) {
+				err := tlsutil.ErrMsgOutOfOrder
+				s.logger.Warnf("service.tlsutil.analyze: [peer=%s] sendmessages(): %v: %v>%v", paddr, err, ts, lastTs)
+				return s.mapError(err)
+			}
+			lastTs = ts
+			//check if expires
 			if s.expiration > 0 {
 				if ts.After(now) {
 					if ts.Sub(now) > s.expiration {
-						s.logger.Warnf("receiving from '%s': out of sync", paddr)
-						return s.mapError(tlsutil.ErrTimeOutOfSync)
+						err := tlsutil.ErrTimeOutOfSync
+						s.logger.Warnf("service.tlsutil.analyze: [peer=%s] sendmessages(): %v: %v>%v ", paddr, err, now, ts)
+						return s.mapError(err)
 					}
 				} else {
 					if now.Sub(ts) > s.expiration {
-						s.logger.Warnf("receiving from '%s': out of sync", paddr)
-						return s.mapError(tlsutil.ErrTimeOutOfSync)
+						err := tlsutil.ErrTimeOutOfSync
+						s.logger.Warnf("service.tlsutil.analyze: [peer=%s] sendmessages(): %v: %v<%v ", paddr, err, now, ts)
+						return s.mapError(err)
 					}
 				}
 			}
@@ -110,7 +122,7 @@ func (s *Service) SendMessages(stream pb.Analyze_SendMessagesServer) error {
 		// send message
 		err = analyzer.SendMessage(msg)
 		if err != nil {
-			s.logger.Warnf("analyzing from '%s' msg=[%v]: %v", paddr, msg, err)
+			s.logger.Warnf("service.tlsutil.analyze: [peer=%s] sendmessages([msg=%v]): %v", paddr, msg, err)
 			if err != tlsutil.ErrStreamNotFound {
 				return s.mapError(err)
 			}
@@ -125,16 +137,20 @@ func (s *Service) mapError(err error) error {
 		return status.Error(codes.Canceled, err.Error())
 	case tlsutil.ErrBadRequest:
 		return status.Error(codes.InvalidArgument, err.Error())
+	case tlsutil.ErrMsgOutOfOrder:
+		return status.Error(codes.OutOfRange, err.Error())
 	case tlsutil.ErrTimeOutOfSync:
 		return status.Error(codes.OutOfRange, err.Error())
 	case tlsutil.ErrNotSupported:
 		return status.Error(codes.Unimplemented, err.Error())
 	case tlsutil.ErrUnavailable:
 		return status.Error(codes.Unavailable, err.Error())
+	case tlsutil.ErrAnalyzerExists:
+		return status.Error(codes.ResourceExhausted, err.Error())
 	case tlsutil.ErrDuplicatedStream:
-		return status.Error(codes.AlreadyExists, tlsutil.ErrDuplicatedStream.Error())
+		return status.Error(codes.AlreadyExists, err.Error())
 	case tlsutil.ErrStreamNotFound:
-		return status.Error(codes.FailedPrecondition, tlsutil.ErrStreamNotFound.Error())
+		return status.Error(codes.FailedPrecondition, err.Error())
 	default:
 		return status.Error(codes.Internal, tlsutil.ErrInternal.Error())
 	}

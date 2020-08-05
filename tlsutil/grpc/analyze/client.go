@@ -65,6 +65,15 @@ func SetLogger(l yalogi.Logger) ClientOption {
 	}
 }
 
+// SetMessageBuffer option sets message buffer
+func SetMessageBuffer(i int) ClientOption {
+	return func(o *clientOpts) {
+		if i > 0 {
+			o.buffSize = i
+		}
+	}
+}
+
 // NewClient returns a new client
 func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	opts := defaultClientOpts
@@ -84,10 +93,12 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 // SendMessage implements capture.Analyzer interface
 func (c *Client) SendMessage(msg *tlsutil.Msg) error {
 	if !c.started {
+		c.logger.Warnf("client.tlsutil.analyze: sendmessage(): client is closed")
 		return tlsutil.ErrUnavailable
 	}
 	err := c.rpc.Send(encoding.MessageRequestPB(msg))
 	if err != nil {
+		c.logger.Warnf("client.tlsutil.analyze: sendmessage([msg=%v]): %v", msg, err)
 		return c.mapError(err)
 	}
 	return nil
@@ -108,8 +119,8 @@ func (c *Client) start() {
 }
 
 func (c *Client) processErrs() {
-	for e := range c.errs {
-		c.logger.Warnf("%v", e)
+	for err := range c.errs {
+		c.logger.Warnf("client.tlsutil.analyze: sendmessage(): %v", err)
 	}
 }
 
@@ -155,9 +166,14 @@ func (c *Client) mapError(err error) error {
 	case codes.InvalidArgument:
 		return tlsutil.ErrBadRequest
 	case codes.OutOfRange:
+		if st.Message() == tlsutil.ErrMsgOutOfOrder.Error() {
+			return tlsutil.ErrMsgOutOfOrder
+		}
 		return tlsutil.ErrTimeOutOfSync
 	case codes.Unimplemented:
 		return tlsutil.ErrNotSupported
+	case codes.ResourceExhausted:
+		return tlsutil.ErrAnalyzerExists
 	case codes.AlreadyExists:
 		return tlsutil.ErrDuplicatedStream
 	case codes.FailedPrecondition:
