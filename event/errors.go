@@ -6,10 +6,10 @@ import "errors"
 
 // Some standard errors returned by interfaces
 var (
-	ErrCanceledRequest = errors.New("canceled request")
-	ErrBadRequest      = errors.New("bad request")
-	ErrUnauthorized    = errors.New("unauthorized")
-	ErrNotSupported    = errors.New("not supported")
-	ErrUnavailable     = errors.New("not available")
-	ErrInternal        = errors.New("internal error")
+	ErrCanceledRequest = errors.New("event: canceled request")
+	ErrBadRequest      = errors.New("event: bad request")
+	ErrUnauthorized    = errors.New("event: unauthorized")
+	ErrNotSupported    = errors.New("event: not supported")
+	ErrUnavailable     = errors.New("event: not available")
+	ErrInternal        = errors.New("event: internal error")
 )
