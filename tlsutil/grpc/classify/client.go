@@ -32,7 +32,6 @@ type Client struct {
 type clientOpts struct {
 	logger    yalogi.Logger
 	closeConn bool
-	debugreq  bool
 }
 
 var defaultClientOpts = clientOpts{
@@ -47,13 +46,6 @@ type ClientOption func(*clientOpts)
 func CloseConnection(b bool) ClientOption {
 	return func(o *clientOpts) {
 		o.closeConn = b
-	}
-}
-
-// DebugRequests option enables debug messages in requests
-func DebugRequests(b bool) ClientOption {
-	return func(o *clientOpts) {
-		o.debugreq = b
 	}
 }
 
@@ -84,10 +76,11 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 // ClassifyConnections implements tlsutil.Classifier
 func (c *Client) ClassifyConnections(ctx context.Context, requests []*tlsutil.ConnectionData) ([]tlsutil.ClassifyResponse, error) {
 	if c.closed {
+		c.logger.Warnf("client.tlsutil.classify: connections(#%v): client is closed", len(requests))
 		return nil, tlsutil.ErrUnavailable
 	}
 	if len(requests) == 0 {
-		c.logger.Warnf("classify request: requests len can't be empty")
+		c.logger.Warnf("client.tlsutil.classify: connections(): requests len can't be empty")
 		return nil, tlsutil.ErrBadRequest
 	}
 	// prepare requests
@@ -98,10 +91,12 @@ func (c *Client) ClassifyConnections(ctx context.Context, requests []*tlsutil.Co
 	// do classify
 	pbres, err := c.client.Connections(ctx, &pb.ClassifyConnectionsRequest{Connections: sendRequests})
 	if err != nil {
+		c.logger.Warnf("client.tlsutil.classify: connections(#%v): %v", len(requests), err)
 		return nil, c.mapError(err)
 	}
 	if len(requests) != len(pbres.Responses) {
-		c.logger.Warnf("classify request: requests len and responses len missmatch")
+		c.logger.Warnf("client.tlsutil.classify: connections(#%v): "+
+			"requests len and responses len (#%v) missmatch", len(requests), len(pbres.Responses))
 		return nil, tlsutil.ErrInternal
 	}
 	// reencode responses

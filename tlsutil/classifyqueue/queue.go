@@ -36,7 +36,7 @@ func newQueue(s int, d time.Duration, p processQueueFn) *queue {
 // close queue
 func (q *queue) close() error {
 	if q.closed {
-		return errors.New("queue already closed")
+		return errors.New("classifyqueue: queue already closed")
 	}
 	q.closed = true
 	close(q.reqC)
@@ -47,7 +47,7 @@ func (q *queue) close() error {
 // add to queue
 func (q *queue) add(req *tlsutil.ConnectionData) error {
 	if q.closed {
-		return errors.New("queue is closed")
+		return errors.New("classifyqueue: queue is closed")
 	}
 	q.reqC <- req
 	return nil

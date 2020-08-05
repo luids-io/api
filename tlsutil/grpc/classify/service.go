@@ -18,35 +18,18 @@ import (
 
 // Service provides a grpc wrapper
 type Service struct {
-	opts       serviceOpts
 	logger     yalogi.Logger
 	classifier tlsutil.Classifier
 }
 
 type serviceOpts struct {
-	logger        yalogi.Logger
-	disclosureErr bool
-	dataBuff      int
+	logger yalogi.Logger
 }
 
-var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull, dataBuff: 100}
+var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
 
 // ServiceOption is used for service configuration
 type ServiceOption func(*serviceOpts)
-
-// DisclosureErrors returns errors without replacing by a generic message
-func DisclosureErrors(b bool) ServiceOption {
-	return func(o *serviceOpts) {
-		o.disclosureErr = b
-	}
-}
-
-// SetDataBuff option allows change channel buffer data
-func SetDataBuff(i int) ServiceOption {
-	return func(o *serviceOpts) {
-		o.dataBuff = i
-	}
-}
 
 // SetServiceLogger option allows set a custom logger
 func SetServiceLogger(l yalogi.Logger) ServiceOption {
@@ -63,7 +46,7 @@ func NewService(c tlsutil.Classifier, opt ...ServiceOption) *Service {
 	for _, o := range opt {
 		o(&opts)
 	}
-	return &Service{classifier: c, logger: opts.logger, opts: opts}
+	return &Service{classifier: c, logger: opts.logger}
 }
 
 // RegisterServer registers a service in the grpc server
@@ -73,10 +56,9 @@ func RegisterServer(server *grpc.Server, service *Service) {
 
 // Connections implements grpc interface
 func (s *Service) Connections(ctx context.Context, in *pb.ClassifyConnectionsRequest) (*pb.ClassifyConnectionsResponse, error) {
-	paddr := getPeerAddr(ctx)
 	// prepare request
 	if len(in.GetConnections()) == 0 {
-		s.logger.Warnf("invalid request from '%s': connection is empty", paddr)
+		s.logger.Warnf("service.tlsutil.classify: [peer=%s] connections(): connections is emtpy", getPeerAddr(ctx))
 		return nil, s.mapError(tlsutil.ErrBadRequest)
 	}
 	requests := make([]*tlsutil.ConnectionData, 0, len(in.GetConnections()))
@@ -87,7 +69,8 @@ func (s *Service) Connections(ctx context.Context, in *pb.ClassifyConnectionsReq
 	// do request
 	responses, err := s.classifier.ClassifyConnections(ctx, requests)
 	if err != nil {
-		s.logger.Warnf("classify from '%s': %v", paddr, err)
+		s.logger.Warnf("service.tlsutil.classify: [peer=%s] connections(#%v): %v",
+			getPeerAddr(ctx), len(requests), err)
 		return nil, s.mapError(err)
 	}
 	// create response

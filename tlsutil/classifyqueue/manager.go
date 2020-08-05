@@ -92,7 +92,7 @@ func (m *Manager) SetConnectionDispatcher(d Dispatcher) {
 // PushConnection add a new connection in the classification queue
 func (m *Manager) PushConnection(req *tlsutil.ConnectionData) error {
 	if m.closed {
-		return errors.New("manager is closed")
+		return errors.New("classifyqueue: manager is closed")
 	}
 	return m.queueCon.add(req)
 }
@@ -100,7 +100,7 @@ func (m *Manager) PushConnection(req *tlsutil.ConnectionData) error {
 // Close manager
 func (m *Manager) Close() error {
 	if m.closed {
-		return errors.New("manager already closed")
+		return errors.New("classifyqueue: manager already closed")
 	}
 	m.closed = true
 	m.queueCon.close()
@@ -109,16 +109,16 @@ func (m *Manager) Close() error {
 
 // classifyConnections implements a processQueueFn function
 func (m *Manager) classifyConnections(wg *sync.WaitGroup, requests []*tlsutil.ConnectionData) {
-	m.logger.Debugf("classifying connections: len(requests)=%v", len(requests))
+	m.logger.Debugf("classifyqueue: classifying connections: len(requests)=%v", len(requests))
 	defer wg.Done()
 	//TODO: implement cancel
 	responses, err := m.classifier.ClassifyConnections(context.Background(), requests)
 	if err != nil {
-		m.logger.Warnf("classifying connections: %v", err)
+		m.logger.Warnf("classifyqueue: classifyconnections(#%v): %v", len(requests), err)
 		return
 	}
 	if m.dispCon != nil {
-		m.logger.Debugf("dispatching responses len(responses)=%v", len(responses))
+		m.logger.Debugf("classifyqueue: dispatching responses #%v", len(responses))
 		m.dispCon(requests, responses)
 	}
 }
