@@ -14,7 +14,7 @@ type AnalyzerFactory interface {
 
 // Analyzer interface defines analyzer methods
 type Analyzer interface {
-	SendPacket(layer Layer, data []byte, md PacketMetadata) error
+	SendPacket(layer Layer, md PacketMetadata, data []byte) error
 	Close() error
 }
 

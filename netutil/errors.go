@@ -6,10 +6,12 @@ import "errors"
 
 // Some standard errors returned by interfaces
 var (
-	ErrBadRequest   = errors.New("bad request")
-	ErrNotSupported = errors.New("not supported")
-	ErrUnavailable  = errors.New("not available")
-	ErrInternal     = errors.New("internal error")
+	ErrBadRequest   = errors.New("netutil: bad request")
+	ErrNotSupported = errors.New("netutil: not supported")
+	ErrUnavailable  = errors.New("netutil: not available")
+	ErrInternal     = errors.New("netutil: internal error")
 	// specific interface Analyze
-	ErrTimeOutOfSync = errors.New("time out of sync")
+	ErrAnalyzerExists   = errors.New("netutil: analyzer with name exists")
+	ErrTimeOutOfSync    = errors.New("netutil: time out of sync")
+	ErrPacketOutOfOrder = errors.New("netutil: packet time out of order")
 )

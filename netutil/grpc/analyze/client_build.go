@@ -3,11 +3,14 @@
 package analyze
 
 import (
+	"errors"
+
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 
 	"github.com/luids-io/core/apiservice"
 	"github.com/luids-io/core/grpctls"
+	"github.com/luids-io/core/option"
 	"github.com/luids-io/core/yalogi"
 )
 
@@ -28,6 +31,18 @@ func ClientBuilder(opt ...ClientOption) apiservice.BuildFn {
 		dial, err := grpctls.Dial(def.Endpoint, def.ClientCfg(), opts...)
 		if err != nil {
 			return nil, err
+		}
+		if def.Log {
+			opt = append(opt, SetLogger(logger))
+		}
+		if len(def.Opts) > 0 {
+			value, ok, err := option.Int(def.Opts, "buffer")
+			if err != nil {
+				return nil, errors.New("invalid 'buffer'")
+			}
+			if ok && value > 0 {
+				opt = append(opt, SetPacketBuffer(value))
+			}
 		}
 		//creates client
 		client := NewClient(dial, opt...)

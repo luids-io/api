@@ -65,6 +65,15 @@ func SetLogger(l yalogi.Logger) ClientOption {
 	}
 }
 
+// SetPacketBuffer option sets packet buffer
+func SetPacketBuffer(i int) ClientOption {
+	return func(o *clientOpts) {
+		if i > 0 {
+			o.buffSize = i
+		}
+	}
+}
+
 // NewClient returns a new client
 func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	opts := defaultClientOpts
@@ -82,8 +91,9 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 }
 
 // SendPacket implements netutil.Analyzer interface
-func (c *Client) SendPacket(layer netutil.Layer, data []byte, md netutil.PacketMetadata) error {
+func (c *Client) SendPacket(layer netutil.Layer, md netutil.PacketMetadata, data []byte) error {
 	if !c.started {
+		c.logger.Warnf("client.netutil.analyze: sendpacket(): client is closed")
 		return netutil.ErrUnavailable
 	}
 	ts, _ := ptypes.TimestampProto(md.Timestamp)
@@ -99,6 +109,7 @@ func (c *Client) SendPacket(layer netutil.Layer, data []byte, md netutil.PacketM
 	}
 	err := c.rpc.Send(req)
 	if err != nil {
+		c.logger.Warnf("client.netutil.analyze: sendpacket(layer=[%v],md=[%v]): %v", layer, md, err)
 		return c.mapError(err)
 	}
 	return nil
@@ -119,8 +130,8 @@ func (c *Client) start() {
 }
 
 func (c *Client) processErrs() {
-	for e := range c.errs {
-		c.logger.Warnf("%v", e)
+	for err := range c.errs {
+		c.logger.Warnf("client.netutil.analyze: sendpacket(): %v", err)
 	}
 }
 
@@ -166,9 +177,14 @@ func (c *Client) mapError(err error) error {
 	case codes.InvalidArgument:
 		return netutil.ErrBadRequest
 	case codes.OutOfRange:
+		if st.Message() == netutil.ErrPacketOutOfOrder.Error() {
+			return netutil.ErrPacketOutOfOrder
+		}
 		return netutil.ErrTimeOutOfSync
 	case codes.Unimplemented:
 		return netutil.ErrNotSupported
+	case codes.ResourceExhausted:
+		return netutil.ErrAnalyzerExists
 	case codes.Internal:
 		return netutil.ErrInternal
 	case codes.Unavailable:

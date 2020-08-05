@@ -4,6 +4,7 @@ package analyze
 
 import (
 	"context"
+	"errors"
 	"io"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 
 	"github.com/luids-io/api/netutil"
 	"github.com/luids-io/api/netutil/grpc/pb"
-	"github.com/luids-io/api/tlsutil"
 	"github.com/luids-io/core/yalogi"
 )
 
@@ -73,70 +73,66 @@ func RegisterServer(server *grpc.Server, service *Service) {
 func (s *Service) SendPackets(stream pb.Analyze_SendPacketsServer) error {
 	paddr := getPeerAddr(stream.Context())
 	if paddr == "" {
-		s.logger.Errorf("can't get peer address")
-		return status.Errorf(codes.Internal, tlsutil.ErrInternal.Error())
+		s.logger.Errorf("service.netutil.analyze: sendpackets(): can't get peer address")
+		return status.Errorf(codes.Internal, netutil.ErrInternal.Error())
 	}
 	analyzer, err := s.factory.NewAnalyzer(paddr)
 	if err != nil {
+		s.logger.Warnf("service.netutil.analyze: [peer=%s] sendpackets(): %v", paddr, err)
 		return s.mapError(err)
 	}
 	defer analyzer.Close()
 
+	var lastTs time.Time
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
 			return nil
 		} else if err != nil {
-			s.logger.Warnf("receiving from '%s': %v", paddr, err)
+			s.logger.Warnf("service.netutil.analyze: [peer=%s] sendpackets(): error receiving: %v", paddr, err)
 			return err
 		}
-		// get layer
-		reqLayer := req.GetLayer()
-		if reqLayer < 0 || reqLayer > pb.Layer_IPV6 {
-			s.logger.Warnf("receiving from '%s': invalid layer", paddr)
-			return s.mapError(tlsutil.ErrBadRequest)
+		// parse request
+		layer, md, pdata, err := parseSendPacketRequest(req)
+		if err != nil {
+			s.logger.Warnf("service.netutil.analyze: [peer=%s] sendpackets(): %v", paddr, err)
+			return s.mapError(netutil.ErrBadRequest)
 		}
-		layer := netutil.Layer(reqLayer)
-
-		// get metadata
-		reqMD := req.GetMetadata()
-		if reqMD == nil {
-			s.logger.Warnf("receiving from '%s': no metadata", paddr)
-			return s.mapError(tlsutil.ErrBadRequest)
-		}
-		// check timestamp
+		// check timestamp...
 		now := time.Now()
-		ts, _ := ptypes.Timestamp(reqMD.Timestamp)
-		if ts.IsZero() {
-			s.logger.Warnf("receiving from '%s': invalid timestamp", paddr)
-			return s.mapError(tlsutil.ErrBadRequest)
+		ts := md.Timestamp
+		if ts.IsZero() || err != nil {
+			s.logger.Warnf("service.netutil.analyze: [peer=%s] sendpackets(): invalid timestamp", paddr)
+			return s.mapError(netutil.ErrBadRequest)
 		}
+		//check if out of order
+		if !lastTs.IsZero() && lastTs.After(ts) {
+			err := netutil.ErrPacketOutOfOrder
+			s.logger.Warnf("service.netutil.analyze: [peer=%s] sendpackets(): %v: %v>%v", paddr, err, ts, lastTs)
+			return s.mapError(err)
+		}
+		lastTs = ts
+		//check if out of sync
 		if s.expiration > 0 {
 			if ts.After(now) {
 				if ts.Sub(now) > s.expiration {
-					s.logger.Warnf("receiving from '%s': out of sync", paddr)
-					return s.mapError(tlsutil.ErrTimeOutOfSync)
+					err := netutil.ErrTimeOutOfSync
+					s.logger.Warnf("service.netutil.analyze: [peer=%s] sendpackets(): %v: %v>%v ", paddr, err, now, ts)
+					return s.mapError(err)
 				}
 			} else {
 				if now.Sub(ts) > s.expiration {
-					s.logger.Warnf("receiving from '%s': out of sync", paddr)
-					return s.mapError(tlsutil.ErrTimeOutOfSync)
+					err := netutil.ErrTimeOutOfSync
+					s.logger.Warnf("service.netutil.analyze: [peer=%s] sendpackets(): %v: %v<%v ", paddr, err, now, ts)
+					return s.mapError(err)
 				}
 			}
 		}
-		md := netutil.PacketMetadata{}
-		md.Timestamp = ts
-		md.CaptureLength = int(reqMD.GetCaptureLength())
-		md.Length = int(reqMD.GetLength())
-		md.InterfaceIndex = int(reqMD.GetInterfaceIndex())
-
 		// send message
-		err = analyzer.SendPacket(layer, req.GetData(), md)
+		err = analyzer.SendPacket(layer, md, pdata)
 		if err != nil {
-			s.logger.Warnf("analyzing from '%s' layer=[%v],ts=[%v],len(data)=[%v]: %v", paddr, layer, ts, len(req.GetData()), err)
-			if err != tlsutil.ErrStreamNotFound {
-				return s.mapError(err)
-			}
+			s.logger.Warnf("service.netutil.analyze: [peer=%s] sendpackets(layer=[%v],md=[%v]): %v", paddr, layer, md, err)
+			return s.mapError(err)
 		}
 	}
 }
@@ -146,10 +142,14 @@ func (s *Service) mapError(err error) error {
 	switch err {
 	case netutil.ErrBadRequest:
 		return status.Error(codes.InvalidArgument, err.Error())
+	case netutil.ErrPacketOutOfOrder:
+		return status.Error(codes.OutOfRange, err.Error())
 	case netutil.ErrTimeOutOfSync:
 		return status.Error(codes.OutOfRange, err.Error())
 	case netutil.ErrNotSupported:
 		return status.Error(codes.Unimplemented, err.Error())
+	case netutil.ErrAnalyzerExists:
+		return status.Error(codes.ResourceExhausted, err.Error())
 	case netutil.ErrUnavailable:
 		return status.Error(codes.Unavailable, err.Error())
 	default:
@@ -157,11 +157,35 @@ func (s *Service) mapError(err error) error {
 	}
 }
 
+func parseSendPacketRequest(req *pb.SendPacketRequest) (layer netutil.Layer, md netutil.PacketMetadata, pdata []byte, err error) {
+	// get layer
+	layer = netutil.Layer(req.GetLayer())
+	if layer < netutil.Ethernet || layer > netutil.IPv6 {
+		err = errors.New("invalid layer")
+		return
+	}
+	// get metadata
+	reqMD := req.GetMetadata()
+	if reqMD == nil {
+		err = errors.New("no metadata")
+		return
+	}
+	md.Timestamp, err = ptypes.Timestamp(reqMD.Timestamp)
+	md.CaptureLength = int(reqMD.GetCaptureLength())
+	md.Length = int(reqMD.GetLength())
+	md.InterfaceIndex = int(reqMD.GetInterfaceIndex())
+	// get data
+	pdata = req.GetData()
+	if pdata == nil {
+		err = errors.New("no packet data")
+	}
+	return
+}
+
 func getPeerAddr(ctx context.Context) (paddr string) {
 	p, ok := peer.FromContext(ctx)
 	if ok {
 		paddr = p.Addr.String()
-
 	}
 	return
 }
