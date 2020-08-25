@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
-	"strconv"
 	"time"
 )
 
@@ -70,15 +69,19 @@ type Source struct {
 	Hostname string `json:"hostname"`
 	Program  string `json:"program"`
 	Instance string `json:"instance"`
+	PID      int    `json:"pid"`
 }
 
 func (s Source) String() string {
-	return fmt.Sprintf("%s.%s[%s]", s.Hostname, s.Program, s.Instance)
+	if s.Instance == "" {
+		return fmt.Sprintf("%s.%s[%v]", s.Hostname, s.Program, s.PID)
+	}
+	return fmt.Sprintf("%s.%s.%s[%v]", s.Hostname, s.Program, s.Instance, s.PID)
 }
 
 // Equals returns true if sources are equals
 func (s Source) Equals(o Source) bool {
-	if s.Hostname != o.Hostname || s.Program != o.Program || s.Instance != o.Instance {
+	if s.Hostname != o.Hostname || s.Program != o.Program || s.Instance != o.Instance || s.PID != o.PID {
 		return false
 	}
 	return true
@@ -272,6 +275,13 @@ func (e *Event) PrintFields() string {
 	return s
 }
 
+// SetDefaultInstance changes default instance name
+func SetDefaultInstance(label string) {
+	if instanceRegExp.MatchString(label) {
+		defaultSource.Instance = label
+	}
+}
+
 // SetDefaultSource allows change default notify events source
 func SetDefaultSource(s Source) {
 	defaultSource = s
@@ -285,6 +295,7 @@ func GetDefaultSource() Source {
 var defaultSource Source
 
 var fieldRegExp, _ = regexp.Compile(`^[A-Za-z][A-Za-z0-9_\.]*$`)
+var instanceRegExp, _ = regexp.Compile(`^[A-Za-z][A-Za-z0-9_]*$`)
 
 func init() {
 	hostname, err := os.Hostname()
@@ -294,6 +305,6 @@ func init() {
 	defaultSource = Source{
 		Hostname: hostname,
 		Program:  filepath.Base(os.Args[0]),
-		Instance: strconv.Itoa(os.Getpid()),
+		PID:      os.Getpid(),
 	}
 }

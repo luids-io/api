@@ -33,6 +33,7 @@ func Source(src *pb.EventSource) event.Source {
 	dst.Hostname = src.GetHostname()
 	dst.Instance = src.GetInstance()
 	dst.Program = src.GetProgram()
+	dst.PID = int(src.GetPid())
 	return dst
 }
 
@@ -42,6 +43,7 @@ func SourcePB(src event.Source) *pb.EventSource {
 	dst.Hostname = src.Hostname
 	dst.Program = src.Program
 	dst.Instance = src.Instance
+	dst.Pid = uint32(src.PID)
 	return dst
 }
 
