@@ -1,7 +1,7 @@
 // Copyright 2019 Luis Guillén Civera <luisguillenc@gmail.com>. See LICENSE.
 
-// Package resolvcollect implements a resolv collector client and a ready
-// to use service component.
+// Package resolvcollect implements a dnsutil.ResolvCollector client and a
+// ready to use service component.
 //
 // This package is a work in progress and makes no API stability promises.
 package resolvcollect

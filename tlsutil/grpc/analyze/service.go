@@ -18,12 +18,15 @@ import (
 	"github.com/luids-io/core/yalogi"
 )
 
-// Service implements a service wrapper for the grpc api
+// Service implements a grpc service wrapper.
 type Service struct {
 	logger     yalogi.Logger
 	expiration time.Duration
 	factory    tlsutil.AnalyzerFactory
 }
+
+// ServiceOption is used for service configuration.
+type ServiceOption func(*serviceOpts)
 
 type serviceOpts struct {
 	logger     yalogi.Logger
@@ -32,10 +35,7 @@ type serviceOpts struct {
 
 var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
 
-// ServiceOption is used for service configuration
-type ServiceOption func(*serviceOpts)
-
-// SetServiceLogger option allows set a custom logger
+// SetServiceLogger option allows set a custom logger.
 func SetServiceLogger(l yalogi.Logger) ServiceOption {
 	return func(o *serviceOpts) {
 		if l != nil {
@@ -44,7 +44,7 @@ func SetServiceLogger(l yalogi.Logger) ServiceOption {
 	}
 }
 
-// SetPacketExpiration option allows set a custom logger
+// SetPacketExpiration option allows set a custom logger.
 func SetPacketExpiration(d time.Duration) ServiceOption {
 	return func(o *serviceOpts) {
 		if d > 0 {
@@ -53,7 +53,7 @@ func SetPacketExpiration(d time.Duration) ServiceOption {
 	}
 }
 
-// NewService returns a new Service for the grpc api
+// NewService returns a new Service.
 func NewService(f tlsutil.AnalyzerFactory, opt ...ServiceOption) *Service {
 	opts := defaultServiceOpts
 	for _, o := range opt {
@@ -62,12 +62,12 @@ func NewService(f tlsutil.AnalyzerFactory, opt ...ServiceOption) *Service {
 	return &Service{factory: f, logger: opts.logger, expiration: opts.expiration}
 }
 
-// RegisterServer registers a service in the grpc server
+// RegisterServer registers a service in the grpc server.
 func RegisterServer(server *grpc.Server, service *Service) {
 	pb.RegisterAnalyzeServer(server, service)
 }
 
-// SendMessages manage messages
+// SendMessages implements grpc api.
 func (s *Service) SendMessages(stream pb.Analyze_SendMessagesServer) error {
 	paddr := getPeerAddr(stream.Context())
 	if paddr == "" {

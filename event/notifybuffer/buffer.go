@@ -1,5 +1,8 @@
 // Copyright 2019 Luis Guillén Civera <luisguillenc@gmail.com>. See LICENSE.
 
+// Package notifybuffer provides a simple event.NotifyBuffer implementation.
+//
+// This package is a work in progress and makes no API stability promises.
 package notifybuffer
 
 import (
@@ -10,12 +13,11 @@ import (
 	"github.com/luids-io/core/yalogi"
 )
 
-// Buffer implements a buffer for async event notification
+// Buffer implements a buffer for async event notification.
 type Buffer struct {
-	event.NotifyBuffer
 	//logger used for errors
 	logger yalogi.Logger
-	//collector
+	//notify
 	notifier event.Notifier
 	//data channel
 	eventCh chan event.Event
@@ -24,18 +26,16 @@ type Buffer struct {
 	close  chan struct{}
 }
 
+// Option encapsules options for buffer.
+type Option func(*bufferOpts)
+
 type bufferOpts struct {
 	logger yalogi.Logger
 }
 
-var defaultBufferOpts = bufferOpts{
-	logger: yalogi.LogNull,
-}
+var defaultBufferOpts = bufferOpts{logger: yalogi.LogNull}
 
-// Option encapsules options for buffer
-type Option func(*bufferOpts)
-
-// SetLogger option allows set a custom logger
+// SetLogger option allows set a custom logger.
 func SetLogger(l yalogi.Logger) Option {
 	return func(o *bufferOpts) {
 		if l != nil {
@@ -44,7 +44,7 @@ func SetLogger(l yalogi.Logger) Option {
 	}
 }
 
-// New returns a new event buffer
+// New returns a new event buffer.
 func New(n event.Notifier, size int, opt ...Option) *Buffer {
 	opts := defaultBufferOpts
 	for _, o := range opt {
@@ -60,10 +60,10 @@ func New(n event.Notifier, size int, opt ...Option) *Buffer {
 	return b
 }
 
-// PushEvent implements an asyncronous notification
+// PushEvent implements an asyncronous notification.
 func (b *Buffer) PushEvent(e event.Event) error {
 	if b.closed {
-		return errors.New("buffer is closed")
+		return errors.New("notifybuffer: buffer is closed")
 	}
 	b.eventCh <- e
 	return nil
@@ -73,9 +73,9 @@ func (b *Buffer) doProcess() {
 	for e := range b.eventCh {
 		reqid, err := b.notifier.NotifyEvent(context.Background(), e)
 		if err != nil {
-			b.logger.Warnf("sending event with code '%v': %v", e.Code, err)
+			b.logger.Warnf("notifybuffer: notifying event with code '%v': %v", e.Code, err)
 		}
-		b.logger.Debugf("notified event reqid: '%s'", reqid)
+		b.logger.Debugf("notifybuffer: notified event reqid: '%s'", reqid)
 	}
 	close(b.close)
 }

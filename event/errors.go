@@ -4,7 +4,7 @@ package event
 
 import "errors"
 
-// Some standard errors returned by interfaces
+// Some standard errors returned by interfaces.
 var (
 	ErrCanceledRequest = errors.New("event: canceled request")
 	ErrBadRequest      = errors.New("event: bad request")

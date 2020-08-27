@@ -6,7 +6,7 @@ import (
 	"context"
 )
 
-// Checker is the interface for check lists
+// Checker is the interface for check lists.
 type Checker interface {
 	// Check method checks if the value encoded as string is in the list
 	Check(ctx context.Context, name string, r Resource) (Response, error)
@@ -16,7 +16,7 @@ type Checker interface {
 	Ping() error
 }
 
-//Response stores information about the service's responses
+//Response stores information about the service's responses.
 type Response struct {
 	// Result is true if the value is in the list
 	Result bool `json:"result"`
@@ -27,5 +27,5 @@ type Response struct {
 }
 
 // NeverCache is a special value for TTL. If TTLs has this value, caches
-// should not store the response
+// should not store the response.
 const NeverCache = -1

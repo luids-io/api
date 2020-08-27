@@ -18,7 +18,7 @@ import (
 	"github.com/luids-io/core/yalogi"
 )
 
-// Client is the main struct for grpc client
+// Client provides a grpc client.
 type Client struct {
 	opts   clientOpts
 	logger yalogi.Logger
@@ -34,6 +34,9 @@ type Client struct {
 	wg      sync.WaitGroup
 }
 
+// ClientOption encapsules options for client.
+type ClientOption func(*clientOpts)
+
 type clientOpts struct {
 	logger    yalogi.Logger
 	closeConn bool
@@ -46,17 +49,14 @@ var defaultClientOpts = clientOpts{
 	buffSize:  100,
 }
 
-// ClientOption encapsules options for client
-type ClientOption func(*clientOpts)
-
-// CloseConnection option closes grpc connection on shutdown
+// CloseConnection option closes grpc connection on shutdown.
 func CloseConnection(b bool) ClientOption {
 	return func(o *clientOpts) {
 		o.closeConn = b
 	}
 }
 
-// SetLogger option allows set a custom logger
+// SetLogger option allows set a custom logger.
 func SetLogger(l yalogi.Logger) ClientOption {
 	return func(o *clientOpts) {
 		if l != nil {
@@ -65,7 +65,7 @@ func SetLogger(l yalogi.Logger) ClientOption {
 	}
 }
 
-// SetMessageBuffer option sets message buffer
+// SetMessageBuffer option sets message buffer.
 func SetMessageBuffer(i int) ClientOption {
 	return func(o *clientOpts) {
 		if i > 0 {
@@ -74,7 +74,7 @@ func SetMessageBuffer(i int) ClientOption {
 	}
 }
 
-// NewClient returns a new client
+// NewClient returns a new client.
 func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	opts := defaultClientOpts
 	for _, o := range opt {
@@ -90,7 +90,7 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	return c
 }
 
-// SendMessage implements capture.Analyzer interface
+// SendMessage implements tlsutil.Analyzer interface.
 func (c *Client) SendMessage(msg *tlsutil.Msg) error {
 	if !c.started {
 		c.logger.Warnf("client.tlsutil.analyze: sendmessage(): client is closed")
@@ -124,7 +124,7 @@ func (c *Client) processErrs() {
 	}
 }
 
-//Close closes the client
+//Close closes the client.
 func (c *Client) Close() error {
 	if !c.started {
 		return errors.New("client closed")
@@ -141,7 +141,7 @@ func (c *Client) Close() error {
 	return nil
 }
 
-// Ping checks connectivity with the api
+// Ping checks connectivity with the api.
 func (c *Client) Ping() error {
 	if !c.started {
 		return errors.New("client closed")

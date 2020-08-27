@@ -6,7 +6,7 @@ import (
 	"context"
 )
 
-// Archiver is the interface for the event archive
+// Archiver is the interface for the event archive.
 type Archiver interface {
 	SaveEvent(ctx context.Context, e Event) (string, error)
 }

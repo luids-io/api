@@ -6,7 +6,7 @@ import (
 	"context"
 )
 
-// Forwarder is the interface for event forwarding
+// Forwarder is the interface for event forwarding.
 type Forwarder interface {
 	ForwardEvent(ctx context.Context, e Event) error
 }

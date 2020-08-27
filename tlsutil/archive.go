@@ -6,7 +6,7 @@ import (
 	"context"
 )
 
-// Archiver is the main interface that must be implemented by storage backends
+// Archiver is the main interface that must be implemented by storage backends.
 type Archiver interface {
 	SaveConnection(context.Context, *ConnectionData) (string, error)
 	SaveCertificate(context.Context, *CertificateData) (string, error)

@@ -14,7 +14,7 @@ import (
 	"github.com/luids-io/api/dnsutil"
 )
 
-// Request encapsules dnsutil resolv queries in a struct for parallel checks
+// Request encapsules dnsutil resolv queries in a struct for parallel checks.
 type Request struct {
 	Client   net.IP
 	Resolved net.IP
@@ -22,7 +22,7 @@ type Request struct {
 }
 
 // Response is used for store request and response in an Check parallel
-// to the resolv checker
+// to the resolv checker.
 type Response struct {
 	Request  Request
 	Response dnsutil.CacheResponse

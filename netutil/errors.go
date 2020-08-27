@@ -4,7 +4,7 @@ package netutil
 
 import "errors"
 
-// Some standard errors returned by interfaces
+// Some standard errors returned by interfaces.
 var (
 	ErrBadRequest   = errors.New("netutil: bad request")
 	ErrNotSupported = errors.New("netutil: not supported")

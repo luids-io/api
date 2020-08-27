@@ -18,11 +18,14 @@ import (
 	"github.com/luids-io/core/yalogi"
 )
 
-// Service provides a wrapper
+// Service implements a grpc service wrapper.
 type Service struct {
 	logger  yalogi.Logger
 	checker dnsutil.ResolvChecker
 }
+
+// ServiceOption is used for service configuration
+type ServiceOption func(*serviceOpts)
 
 type serviceOpts struct {
 	logger yalogi.Logger
@@ -30,10 +33,7 @@ type serviceOpts struct {
 
 var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
 
-// ServiceOption is used for service configuration
-type ServiceOption func(*serviceOpts)
-
-// SetServiceLogger option allows set a custom logger
+// SetServiceLogger option allows set a custom logger.
 func SetServiceLogger(l yalogi.Logger) ServiceOption {
 	return func(o *serviceOpts) {
 		if l != nil {
@@ -51,12 +51,12 @@ func NewService(c dnsutil.ResolvChecker, opt ...ServiceOption) *Service {
 	return &Service{checker: c, logger: opts.logger}
 }
 
-// RegisterServer registers a service in the grpc server
+// RegisterServer registers a service in the grpc server.
 func RegisterServer(server *grpc.Server, service *Service) {
 	pb.RegisterResolvCheckServer(server, service)
 }
 
-// Check implements API
+// Check implements grpc api.
 func (s *Service) Check(ctx context.Context, in *pb.ResolvCheckRequest) (*pb.ResolvCheckResponse, error) {
 	//parse request
 	client, resolved, name, err := parseRequest(in)

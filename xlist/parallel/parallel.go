@@ -13,14 +13,14 @@ import (
 	"github.com/luids-io/api/xlist"
 )
 
-// Request encapsules xlist queries in a struct for parallel checks
+// Request encapsules xlist queries in a struct for parallel checks.
 type Request struct {
 	Name     string
 	Resource xlist.Resource
 }
 
 // Response is used for store request and response in an Check parallel
-// to the list checker
+// to the list checker.
 type Response struct {
 	Request  Request
 	Response xlist.Response

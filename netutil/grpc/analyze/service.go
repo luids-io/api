@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -20,12 +19,15 @@ import (
 	"github.com/luids-io/core/yalogi"
 )
 
-// Service implements a service wrapper for the grpc api
+// Service implements a grpc service wrapper.
 type Service struct {
 	logger     yalogi.Logger
 	expiration time.Duration
 	factory    netutil.AnalyzerFactory
 }
+
+// ServiceOption is used for service configuration
+type ServiceOption func(*serviceOpts)
 
 type serviceOpts struct {
 	logger     yalogi.Logger
@@ -34,10 +36,7 @@ type serviceOpts struct {
 
 var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
 
-// ServiceOption is used for service configuration
-type ServiceOption func(*serviceOpts)
-
-// SetServiceLogger option allows set a custom logger
+// SetServiceLogger option allows set a custom logger.
 func SetServiceLogger(l yalogi.Logger) ServiceOption {
 	return func(o *serviceOpts) {
 		if l != nil {
@@ -46,7 +45,7 @@ func SetServiceLogger(l yalogi.Logger) ServiceOption {
 	}
 }
 
-// SetPacketExpiration option allows set a custom logger
+// SetPacketExpiration option allows set packet expire time.
 func SetPacketExpiration(d time.Duration) ServiceOption {
 	return func(o *serviceOpts) {
 		if d > 0 {
@@ -55,7 +54,7 @@ func SetPacketExpiration(d time.Duration) ServiceOption {
 	}
 }
 
-// NewService returns a new Service for the grpc api
+// NewService returns a new Service.
 func NewService(f netutil.AnalyzerFactory, opt ...ServiceOption) *Service {
 	opts := defaultServiceOpts
 	for _, o := range opt {
@@ -64,12 +63,12 @@ func NewService(f netutil.AnalyzerFactory, opt ...ServiceOption) *Service {
 	return &Service{factory: f, logger: opts.logger, expiration: opts.expiration}
 }
 
-// RegisterServer registers a service in the grpc server
+// RegisterServer registers a service in the grpc server.
 func RegisterServer(server *grpc.Server, service *Service) {
 	pb.RegisterAnalyzeServer(server, service)
 }
 
-// SendPackets manage messages
+// SendPackets implements grpc api.
 func (s *Service) SendPackets(stream pb.Analyze_SendPacketsServer) error {
 	paddr := getPeerAddr(stream.Context())
 	if paddr == "" {

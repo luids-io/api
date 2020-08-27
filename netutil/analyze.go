@@ -7,21 +7,21 @@ import (
 	"time"
 )
 
-// AnalyzerFactory interface is used for create Analyzer services
+// AnalyzerFactory interface is used for create Analyzer services.
 type AnalyzerFactory interface {
 	NewAnalyzer(name string) (Analyzer, error)
 }
 
-// Analyzer interface defines analyzer methods
+// Analyzer interface defines analyzer methods.
 type Analyzer interface {
 	SendPacket(layer Layer, md PacketMetadata, data []byte) error
 	Close() error
 }
 
-// Layer of packets
+// Layer of packets.
 type Layer int
 
-// Layer types
+// Layer types.
 const (
 	Ethernet Layer = iota
 	IPv4
@@ -41,7 +41,7 @@ func (l Layer) String() string {
 	}
 }
 
-// PacketMetadata is a copy of gopacket.PacketMetadata
+// PacketMetadata is a copy of gopacket.PacketMetadata.
 type PacketMetadata struct {
 	// Timestamp is the time the packet was captured, if that is known.
 	Timestamp time.Time

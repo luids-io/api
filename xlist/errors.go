@@ -4,7 +4,7 @@ package xlist
 
 import "errors"
 
-// Some standard errors returned by List interfaces
+// Some standard errors returned by interfaces.
 var (
 	ErrCanceledRequest = errors.New("xlist: canceled request")
 	ErrBadRequest      = errors.New("xlist: bad request")

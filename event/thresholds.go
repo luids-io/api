@@ -4,7 +4,7 @@ package event
 
 const thUnasigned = -1
 
-// Threshold is used for define threshold
+// Threshold is used for define threshold.
 type Threshold struct {
 	low      float32
 	medium   float32
@@ -12,7 +12,7 @@ type Threshold struct {
 	critical float32
 }
 
-// NewThreshold creates a new empty threshold
+// NewThreshold creates a new empty threshold.
 func NewThreshold() Threshold {
 	return Threshold{
 		low:      thUnasigned,
@@ -22,27 +22,27 @@ func NewThreshold() Threshold {
 	}
 }
 
-// Low sets the low value for threshold
+// Low sets the low value for threshold.
 func (t *Threshold) Low(value float32) {
 	t.low = value
 }
 
-// Medium sets the medium value for threshold
+// Medium sets the medium value for threshold.
 func (t *Threshold) Medium(value float32) {
 	t.medium = value
 }
 
-// High sets the high value for threshold
+// High sets the high value for threshold.
 func (t *Threshold) High(value float32) {
 	t.high = value
 }
 
-// Critical sets the critical value for threshold
+// Critical sets the critical value for threshold.
 func (t *Threshold) Critical(value float32) {
 	t.critical = value
 }
 
-// Level computes level from a value
+// Level computes level from a value.
 func (t Threshold) Level(value float32) Level {
 	if t.critical != thUnasigned && value >= t.critical {
 		return Critical

@@ -1,7 +1,7 @@
 // Copyright 2019 Luis Guillén Civera <luisguillenc@gmail.com>. See LICENSE.
 
-// Package check provides an xlist client and a ready-to-use service
-// wrapper for the luids.xlist.vX.Check API
+// Package check implements a xlist.Checker client and a ready to use service
+// component.
 //
 // This package is a work in progress and makes no API stability promises.
 package check

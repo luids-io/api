@@ -283,7 +283,7 @@ func TestClearResourceDups(t *testing.T) {
 			[]xlist.Resource{xlist.IPv4, xlist.IPv6, xlist.SHA1, xlist.SHA256}},
 	}
 	for _, test := range tests {
-		got := xlist.ClearResourceDups(test.in)
+		got := xlist.ClearResourceDups(test.in, true)
 		if !cmpResourceSlice(test.out, got) {
 			t.Errorf("ClearResourceDups(%v) = %v", test.in, got)
 		}

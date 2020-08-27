@@ -18,7 +18,7 @@ import (
 	"github.com/luids-io/core/yalogi"
 )
 
-// Client provides a grpc client that implements a tlsutil machine learning classifier
+// Client provides a grpc client.
 type Client struct {
 	opts   clientOpts
 	logger yalogi.Logger
@@ -28,6 +28,9 @@ type Client struct {
 	//control
 	closed bool
 }
+
+// ClientOption encapsules options for client.
+type ClientOption func(*clientOpts)
 
 type clientOpts struct {
 	logger    yalogi.Logger
@@ -39,17 +42,14 @@ var defaultClientOpts = clientOpts{
 	closeConn: true,
 }
 
-// ClientOption encapsules options for client
-type ClientOption func(*clientOpts)
-
-// CloseConnection option closes grpc connection on close
+// CloseConnection option closes grpc connection on close.
 func CloseConnection(b bool) ClientOption {
 	return func(o *clientOpts) {
 		o.closeConn = b
 	}
 }
 
-// SetLogger option allows set a custom logger
+// SetLogger option allows set a custom logger.
 func SetLogger(l yalogi.Logger) ClientOption {
 	return func(o *clientOpts) {
 		if l != nil {
@@ -58,7 +58,7 @@ func SetLogger(l yalogi.Logger) ClientOption {
 	}
 }
 
-// NewClient returns a new grpc Client
+// NewClient returns a new grpc Client.
 func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	opts := defaultClientOpts
 	for _, o := range opt {
@@ -73,7 +73,7 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	return c
 }
 
-// ClassifyConnections implements tlsutil.Classifier
+// ClassifyConnections implements tlsutil.Classifier.
 func (c *Client) ClassifyConnections(ctx context.Context, requests []*tlsutil.ConnectionData) ([]tlsutil.ClassifyResponse, error) {
 	if c.closed {
 		c.logger.Warnf("client.tlsutil.classify: connections(#%v): client is closed", len(requests))
@@ -120,7 +120,7 @@ func (c *Client) ClassifyConnections(ctx context.Context, requests []*tlsutil.Co
 	return responses, nil
 }
 
-//Close closes the client
+//Close closes the client.
 func (c *Client) Close() error {
 	if c.closed {
 		return errors.New("client closed")
@@ -132,7 +132,7 @@ func (c *Client) Close() error {
 	return nil
 }
 
-// Ping checks connectivity with the api
+// Ping checks connectivity with the api.
 func (c *Client) Ping() error {
 	if c.closed {
 		return errors.New("client closed")
@@ -147,7 +147,7 @@ func (c *Client) Ping() error {
 	return nil
 }
 
-//API returns API service name implemented
+//API returns API service name implemented.
 func (c *Client) API() string {
 	return ServiceName()
 }

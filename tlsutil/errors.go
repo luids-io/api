@@ -4,7 +4,7 @@ package tlsutil
 
 import "errors"
 
-// Some standard errors returned by interfaces
+// Some standard errors returned by interfaces.
 var (
 	ErrCanceledRequest = errors.New("tlsutil: canceled request")
 	ErrBadRequest      = errors.New("tlsutil: bad request")

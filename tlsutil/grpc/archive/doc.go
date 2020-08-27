@@ -1,7 +1,7 @@
 // Copyright 2019 Luis Guillén Civera <luisguillenc@gmail.com>. See LICENSE.
 
-// Package archive implements a tls archiver client and a ready
-// to use service component.
+// Package archive implements a tlsutil.Archive client and a ready to use
+// service component.
 //
 // This package is a work in progress and makes no API stability promises.
 package archive

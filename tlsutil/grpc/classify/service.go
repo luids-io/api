@@ -16,11 +16,14 @@ import (
 	"github.com/luids-io/core/yalogi"
 )
 
-// Service provides a grpc wrapper
+// Service implements a grpc service wrapper.
 type Service struct {
 	logger     yalogi.Logger
 	classifier tlsutil.Classifier
 }
+
+// ServiceOption is used for service configuration
+type ServiceOption func(*serviceOpts)
 
 type serviceOpts struct {
 	logger yalogi.Logger
@@ -28,10 +31,7 @@ type serviceOpts struct {
 
 var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
 
-// ServiceOption is used for service configuration
-type ServiceOption func(*serviceOpts)
-
-// SetServiceLogger option allows set a custom logger
+// SetServiceLogger option allows set a custom logger.
 func SetServiceLogger(l yalogi.Logger) ServiceOption {
 	return func(o *serviceOpts) {
 		if l != nil {
@@ -40,7 +40,7 @@ func SetServiceLogger(l yalogi.Logger) ServiceOption {
 	}
 }
 
-// NewService returns a new Service for the cheker
+// NewService returns a new Service for the cheker.
 func NewService(c tlsutil.Classifier, opt ...ServiceOption) *Service {
 	opts := defaultServiceOpts
 	for _, o := range opt {
@@ -49,12 +49,12 @@ func NewService(c tlsutil.Classifier, opt ...ServiceOption) *Service {
 	return &Service{classifier: c, logger: opts.logger}
 }
 
-// RegisterServer registers a service in the grpc server
+// RegisterServer registers a service in the grpc server.
 func RegisterServer(server *grpc.Server, service *Service) {
 	pb.RegisterClassifyServer(server, service)
 }
 
-// Connections implements grpc interface
+// Connections implements grpc api.
 func (s *Service) Connections(ctx context.Context, in *pb.ClassifyConnectionsRequest) (*pb.ClassifyConnectionsResponse, error) {
 	// prepare request
 	if len(in.GetConnections()) == 0 {

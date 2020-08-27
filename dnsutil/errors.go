@@ -4,7 +4,7 @@ package dnsutil
 
 import "errors"
 
-// Some standard errors returned by interfaces
+// Some standard errors returned by interfaces.
 var (
 	ErrCanceledRequest = errors.New("dnsutil: canceled request")
 	ErrBadRequest      = errors.New("dnsutil: bad request")

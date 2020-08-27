@@ -1,5 +1,8 @@
 // Copyright 2020 Luis Guillén Civera <luisguillenc@gmail.com>. View LICENSE.
 
+// Package classifyqueue provides a classification queue.
+//
+// This package is a work in progress and makes no API stability promises.
 package classifyqueue
 
 import (
@@ -12,10 +15,10 @@ import (
 	"github.com/luids-io/core/yalogi"
 )
 
-// Dispatcher function for process classification responses
+// Dispatcher function for process classification responses.
 type Dispatcher func([]*tlsutil.ConnectionData, []tlsutil.ClassifyResponse)
 
-// Manager implements an async classification service
+// Manager implements an async classification service.
 type Manager struct {
 	logger yalogi.Logger
 	closed bool
@@ -26,6 +29,9 @@ type Manager struct {
 	//dispatchers
 	dispCon Dispatcher
 }
+
+// Option encapsules options for manager.
+type Option func(*options)
 
 type options struct {
 	logger    yalogi.Logger
@@ -39,10 +45,7 @@ var defaultOpts = options{
 	interval:  1 * time.Second,
 }
 
-// Option encapsules options for manager
-type Option func(*options)
-
-// SetLogger option allows set a custom logger
+// SetLogger option allows set a custom logger.
 func SetLogger(l yalogi.Logger) Option {
 	return func(o *options) {
 		if l != nil {
@@ -51,7 +54,7 @@ func SetLogger(l yalogi.Logger) Option {
 	}
 }
 
-// SetQueueSize option allows change classification queue size
+// SetQueueSize option allows change classification queue size.
 func SetQueueSize(i int) Option {
 	return func(o *options) {
 		if i > 0 {
@@ -60,7 +63,7 @@ func SetQueueSize(i int) Option {
 	}
 }
 
-// SetInterval option allows change interval
+// SetInterval option allows change interval.
 func SetInterval(d time.Duration) Option {
 	return func(o *options) {
 		if d > 0 {
@@ -69,7 +72,7 @@ func SetInterval(d time.Duration) Option {
 	}
 }
 
-// New returns a new classify manager
+// New returns a new classify manager.
 func New(c tlsutil.Classifier, opt ...Option) *Manager {
 	opts := defaultOpts
 	for _, o := range opt {
@@ -84,12 +87,12 @@ func New(c tlsutil.Classifier, opt ...Option) *Manager {
 	return m
 }
 
-// SetConnectionDispatcher to dispatch connection classify responses
+// SetConnectionDispatcher to dispatch connection classify responses.
 func (m *Manager) SetConnectionDispatcher(d Dispatcher) {
 	m.dispCon = d
 }
 
-// PushConnection add a new connection in the classification queue
+// PushConnection add a new connection in the classification queue.
 func (m *Manager) PushConnection(req *tlsutil.ConnectionData) error {
 	if m.closed {
 		return errors.New("classifyqueue: manager is closed")
@@ -97,7 +100,7 @@ func (m *Manager) PushConnection(req *tlsutil.ConnectionData) error {
 	return m.queueCon.add(req)
 }
 
-// Close manager
+// Close manager.
 func (m *Manager) Close() error {
 	if m.closed {
 		return errors.New("classifyqueue: manager already closed")

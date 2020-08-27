@@ -18,12 +18,14 @@ import (
 	"github.com/luids-io/core/yalogi"
 )
 
-// Service provides a wrapper for the interface tlsutil.Notary that handles
-// grpc requests.
+// Service implements a grpc service wrapper.
 type Service struct {
 	logger yalogi.Logger
 	notary tlsutil.Notary
 }
+
+// ServiceOption is used for service configuration.
+type ServiceOption func(*serviceOpts)
 
 type serviceOpts struct {
 	logger yalogi.Logger
@@ -31,10 +33,7 @@ type serviceOpts struct {
 
 var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
 
-// ServiceOption is used for service configuration
-type ServiceOption func(*serviceOpts)
-
-// SetServiceLogger option allows set a custom logger
+// SetServiceLogger option allows set a custom logger.
 func SetServiceLogger(l yalogi.Logger) ServiceOption {
 	return func(o *serviceOpts) {
 		if l != nil {
@@ -43,7 +42,7 @@ func SetServiceLogger(l yalogi.Logger) ServiceOption {
 	}
 }
 
-// NewService returns a new Service for the notary
+// NewService returns a new Service.
 func NewService(notary tlsutil.Notary, opt ...ServiceOption) *Service {
 	opts := defaultServiceOpts
 	for _, o := range opt {
@@ -52,12 +51,12 @@ func NewService(notary tlsutil.Notary, opt ...ServiceOption) *Service {
 	return &Service{notary: notary, logger: opts.logger}
 }
 
-// RegisterServer registers a service in the grpc server
+// RegisterServer registers a service in the grpc server.
 func RegisterServer(server *grpc.Server, service *Service) {
 	pb.RegisterNotaryServer(server, service)
 }
 
-// GetServerChain implements Service interface
+// GetServerChain implements grpc api.
 func (s *Service) GetServerChain(ctx context.Context, in *pb.GetServerChainRequest) (*pb.GetServerChainResponse, error) {
 	// prepare request
 	ip, port, sni, profile, err := parseGetServerChainRequest(in)
@@ -77,7 +76,7 @@ func (s *Service) GetServerChain(ctx context.Context, in *pb.GetServerChainReque
 	return &pb.GetServerChainResponse{Chain: chain}, nil
 }
 
-// SetServerChain implements Service interface
+// SetServerChain implements grpc api.
 func (s *Service) SetServerChain(ctx context.Context, in *pb.SetServerChainRequest) (*pb.SetServerChainResponse, error) {
 	// prepare request
 	ip, port, sni, profile, chain, err := parseSetServerChainRequest(in)
@@ -97,7 +96,7 @@ func (s *Service) SetServerChain(ctx context.Context, in *pb.SetServerChainReque
 	return &pb.SetServerChainResponse{}, nil
 }
 
-// VerifyChain implements Service interface
+// VerifyChain implements grpc api.
 func (s *Service) VerifyChain(ctx context.Context, in *pb.VerifyChainRequest) (*pb.VerifyChainResponse, error) {
 	// prepare request
 	chain := in.GetChain()
@@ -124,7 +123,7 @@ func (s *Service) VerifyChain(ctx context.Context, in *pb.VerifyChainRequest) (*
 	return res, nil
 }
 
-// UploadCerts implements Service interface
+// UploadCerts implements grpc api.
 func (s *Service) UploadCerts(ctx context.Context, in *pb.UploadCertsRequest) (*pb.UploadCertsResponse, error) {
 	// prepare request
 	rawcerts := in.GetCerts()
@@ -151,7 +150,7 @@ func (s *Service) UploadCerts(ctx context.Context, in *pb.UploadCertsRequest) (*
 	return &pb.UploadCertsResponse{Chain: chain}, nil
 }
 
-// DownloadCerts implements Service interface
+// DownloadCerts implements grpc api.
 func (s *Service) DownloadCerts(ctx context.Context, in *pb.DownloadCertsRequest) (*pb.DownloadCertsResponse, error) {
 	// prepare request
 	chain := in.GetChain()

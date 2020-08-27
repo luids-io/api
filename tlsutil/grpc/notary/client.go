@@ -20,7 +20,7 @@ import (
 	"github.com/luids-io/core/yalogi"
 )
 
-// Client provides a grpc client that implements tlsutil.Notary interface.
+// Client provides a grpc client.
 type Client struct {
 	opts   clientOpts
 	logger yalogi.Logger
@@ -36,10 +36,12 @@ type Client struct {
 	dcache *downloadCache
 }
 
+// ClientOption encapsules options for client.
+type ClientOption func(*clientOpts)
+
 type clientOpts struct {
 	logger    yalogi.Logger
 	closeConn bool
-	debugreq  bool
 	//cache opts
 	useCache         bool
 	ttl, negativettl int
@@ -52,24 +54,14 @@ var defaultClientOpts = clientOpts{
 	cacheCleanup: defaultCacheCleanups,
 }
 
-// ClientOption encapsules options for client
-type ClientOption func(*clientOpts)
-
-// CloseConnection option closes grpc connection on close
+// CloseConnection option closes grpc connection on close.
 func CloseConnection(b bool) ClientOption {
 	return func(o *clientOpts) {
 		o.closeConn = b
 	}
 }
 
-// DebugRequests option enables debug messages in requests
-func DebugRequests(b bool) ClientOption {
-	return func(o *clientOpts) {
-		o.debugreq = b
-	}
-}
-
-// SetLogger option allows set a custom logger
+// SetLogger option allows set a custom logger.
 func SetLogger(l yalogi.Logger) ClientOption {
 	return func(o *clientOpts) {
 		if l != nil {
@@ -78,7 +70,7 @@ func SetLogger(l yalogi.Logger) ClientOption {
 	}
 }
 
-// SetCache sets cache ttl and negative ttl (for validations)
+// SetCache sets cache ttl and negative ttl (for validations).
 func SetCache(ttl, negativettl int) ClientOption {
 	return func(o *clientOpts) {
 		if ttl > 0 {
@@ -89,7 +81,7 @@ func SetCache(ttl, negativettl int) ClientOption {
 	}
 }
 
-// SetCacheCleanUps sets interval between cache cleanups
+// SetCacheCleanUps sets interval between cache cleanups.
 func SetCacheCleanUps(d time.Duration) ClientOption {
 	return func(o *clientOpts) {
 		if d > 0 {
@@ -98,7 +90,7 @@ func SetCacheCleanUps(d time.Duration) ClientOption {
 	}
 }
 
-// NewClient returns a new grpc Client
+// NewClient returns a new client.
 func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	opts := defaultClientOpts
 	for _, o := range opt {
@@ -119,7 +111,7 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	return c
 }
 
-// GetServerChain implements tlsutil.Notary interface
+// GetServerChain implements tlsutil.Notary interface.
 func (c *Client) GetServerChain(ctx context.Context, ip net.IP, port int, sni, profile string) (string, error) {
 	if c.closed {
 		c.logger.Warnf("client.tlsutil.notary: getserverchain(%v,%v,%s,%s): client is closed",
@@ -154,7 +146,7 @@ func (c *Client) GetServerChain(ctx context.Context, ip net.IP, port int, sni, p
 	return chain, nil
 }
 
-// SetServerChain implements tlsutil.Notary interface
+// SetServerChain implements tlsutil.Notary interface.
 func (c *Client) SetServerChain(ctx context.Context, ip net.IP, port int, sni, profile string, chain string) error {
 	if c.closed {
 		c.logger.Warnf("client.tlsutil.notary: setserverchain(%v,%v,%s,%s,%s): client is closed",
@@ -191,7 +183,7 @@ func (c *Client) SetServerChain(ctx context.Context, ip net.IP, port int, sni, p
 	return nil
 }
 
-// VerifyChain implements tlsutil.Notary interface
+// VerifyChain implements tlsutil.Notary interface.
 func (c *Client) VerifyChain(ctx context.Context, chain string, dnsname string, force bool) (tlsutil.VerifyResponse, error) {
 	if c.closed {
 		c.logger.Warnf("client.tlsutil.notary: verifychain(%s,%s,%v): client is closed", chain, dnsname, force)
@@ -228,7 +220,7 @@ func (c *Client) VerifyChain(ctx context.Context, chain string, dnsname string, 
 	return vr, nil
 }
 
-// UploadCerts implements tlsutil.Notary interface
+// UploadCerts implements tlsutil.Notary interface.
 func (c *Client) UploadCerts(ctx context.Context, certs []*x509.Certificate) (string, error) {
 	if c.closed {
 		c.logger.Warnf("client.tlsutil.notary: uploadcerts(): client is closed")
@@ -262,7 +254,7 @@ func (c *Client) UploadCerts(ctx context.Context, certs []*x509.Certificate) (st
 	return chain, nil
 }
 
-// DownloadCerts implements tlsutil.Notary interface
+// DownloadCerts implements tlsutil.Notary interface.
 func (c *Client) DownloadCerts(ctx context.Context, chain string) ([]*x509.Certificate, error) {
 	if c.closed {
 		c.logger.Warnf("client.tlsutil.notary: downloadcerts(%s): client is closed", chain)
@@ -302,7 +294,7 @@ func (c *Client) DownloadCerts(ctx context.Context, chain string) ([]*x509.Certi
 	return certs, nil
 }
 
-// Ping checks connectivity with the api
+// Ping checks connectivity with the api.
 func (c *Client) Ping() error {
 	if c.closed {
 		return errors.New("client closed")
@@ -317,7 +309,7 @@ func (c *Client) Ping() error {
 	return nil
 }
 
-//Close the client
+//Close the client.
 func (c *Client) Close() error {
 	if c.closed {
 		return errors.New("client closed")
@@ -354,7 +346,7 @@ func (c *Client) mapError(err error) error {
 	}
 }
 
-//API returns API service name implemented
+//API returns API service name implemented.
 func (c *Client) API() string {
 	return ServiceName()
 }

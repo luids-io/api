@@ -11,7 +11,7 @@ import (
 	"github.com/luids-io/core/yalogi"
 )
 
-// ClientBuilder returns builder function for the apiservice
+// ClientBuilder returns builder function for the apiservice.
 func ClientBuilder(opt ...ClientOption) apiservice.BuildFn {
 	return func(def apiservice.ServiceDef, logger yalogi.Logger) (apiservice.Service, error) {
 		//validates definition

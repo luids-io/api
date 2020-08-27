@@ -21,7 +21,7 @@ import (
 	"github.com/luids-io/core/yalogi"
 )
 
-// Client provides a client for resolvcheck api
+// Client provides a grpc client.
 type Client struct {
 	opts   clientOpts
 	logger yalogi.Logger
@@ -33,6 +33,9 @@ type Client struct {
 	//cache
 	cache *cache
 }
+
+// ClientOption encapsules options for client.
+type ClientOption func(*clientOpts)
 
 type clientOpts struct {
 	logger    yalogi.Logger
@@ -53,17 +56,14 @@ var defaultClientOpts = clientOpts{
 	cacheCleanup: defaultCacheCleanups,
 }
 
-// ClientOption encapsules options for client
-type ClientOption func(*clientOpts)
-
-// CloseConnection option closes grpc connection on shutdown
+// CloseConnection option closes grpc connection on shutdown.
 func CloseConnection(b bool) ClientOption {
 	return func(o *clientOpts) {
 		o.closeConn = b
 	}
 }
 
-// SetLogger option allows set a custom logger
+// SetLogger option allows set a custom logger.
 func SetLogger(l yalogi.Logger) ClientOption {
 	return func(o *clientOpts) {
 		if l != nil {
@@ -72,7 +72,7 @@ func SetLogger(l yalogi.Logger) ClientOption {
 	}
 }
 
-// SetClientMap option allows set a client mapper
+// SetClientMap option allows set a client mapper.
 func SetClientMap(cmap *ClientMap) ClientOption {
 	return func(o *clientOpts) {
 		if cmap != nil {
@@ -81,7 +81,7 @@ func SetClientMap(cmap *ClientMap) ClientOption {
 	}
 }
 
-// SetCache sets cache ttl and negative ttl
+// SetCache option sets cache ttl and negative ttl.
 func SetCache(ttl, negativettl int) ClientOption {
 	return func(o *clientOpts) {
 		if ttl >= xlist.NeverCache && negativettl >= xlist.NeverCache {
@@ -92,7 +92,7 @@ func SetCache(ttl, negativettl int) ClientOption {
 	}
 }
 
-// SetCacheCleanUps sets interval between cache cleanups
+// SetCacheCleanUps option sets interval between cache cleanups.
 func SetCacheCleanUps(d time.Duration) ClientOption {
 	return func(o *clientOpts) {
 		if d > 0 {
@@ -101,7 +101,7 @@ func SetCacheCleanUps(d time.Duration) ClientOption {
 	}
 }
 
-// NewClient returns a new Client
+// NewClient returns a new Client.
 func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	opts := defaultClientOpts
 	for _, o := range opt {
@@ -119,7 +119,7 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	return c
 }
 
-// Check implements dnsutil.ResolvChecker interface
+// Check implements dnsutil.ResolvChecker interface.
 func (c *Client) Check(ctx context.Context, client, resolved net.IP, name string) (dnsutil.CacheResponse, error) {
 	if c.closed {
 		c.logger.Warnf("client.dnsutil.resolvcheck: check(%v,%v,%s): client is closed", client, resolved, name)
@@ -161,14 +161,14 @@ func (c *Client) mapError(err error) error {
 	}
 }
 
-//Flush cache if set
+//Flush cache if set.
 func (c *Client) Flush() {
 	if !c.closed && c.opts.useCache {
 		c.cache.flush()
 	}
 }
 
-//Close closes the client
+//Close closes the client.
 func (c *Client) Close() error {
 	if c.closed {
 		return errors.New("client closed")
@@ -184,7 +184,7 @@ func (c *Client) Close() error {
 	return nil
 }
 
-// Ping checks connectivity with the api
+// Ping checks connectivity with the api.
 func (c *Client) Ping() error {
 	if c.closed {
 		return errors.New("client closed")
@@ -225,7 +225,7 @@ func (c *Client) doCheck(ctx context.Context, client, resolved net.IP, name stri
 	return resp, nil
 }
 
-//API returns API service name implemented
+//API returns API service name implemented.
 func (c *Client) API() string {
 	return ServiceName()
 }

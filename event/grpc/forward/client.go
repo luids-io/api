@@ -18,7 +18,7 @@ import (
 	"github.com/luids-io/core/yalogi"
 )
 
-// Client is the main struct for grpc client
+// Client provides a grpc client.
 type Client struct {
 	opts   clientOpts
 	logger yalogi.Logger
@@ -28,6 +28,9 @@ type Client struct {
 	//control
 	closed bool
 }
+
+// ClientOption encapsules options for client.
+type ClientOption func(*clientOpts)
 
 type clientOpts struct {
 	logger    yalogi.Logger
@@ -39,17 +42,14 @@ var defaultClientOpts = clientOpts{
 	closeConn: true,
 }
 
-// ClientOption encapsules options for client
-type ClientOption func(*clientOpts)
-
-// CloseConnection option closes grpc connection on shutdown
+// CloseConnection option closes grpc connection on shutdown.
 func CloseConnection(b bool) ClientOption {
 	return func(o *clientOpts) {
 		o.closeConn = b
 	}
 }
 
-// SetLogger option allows set a custom logger
+// SetLogger option allows set a custom logger.
 func SetLogger(l yalogi.Logger) ClientOption {
 	return func(o *clientOpts) {
 		if l != nil {
@@ -58,7 +58,7 @@ func SetLogger(l yalogi.Logger) ClientOption {
 	}
 }
 
-// NewClient returns a new client
+// NewClient returns a new client.
 func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	opts := defaultClientOpts
 	for _, o := range opt {
@@ -72,7 +72,7 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 	}
 }
 
-// ForwardEvent implements event.Forwarder interface
+// ForwardEvent implements event.Forwarder interface.
 func (c *Client) ForwardEvent(ctx context.Context, e event.Event) error {
 	if c.closed {
 		c.logger.Warnf("client.event.forward: forward(%v,%s): client is closed", e.Code, e.ID)

@@ -16,13 +16,15 @@ import (
 	"github.com/luids-io/core/yalogi"
 )
 
-// Service provides a wrapper for the interface xlist.Checker that handles
-// grpc requests.
+// Service implements a grpc service wrapper.
 type Service struct {
 	opts    serviceOpts
 	logger  yalogi.Logger
 	checker xlist.Checker
 }
+
+// ServiceOption is used for service configuration.
+type ServiceOption func(*serviceOpts)
 
 type serviceOpts struct {
 	logger        yalogi.Logger
@@ -32,25 +34,22 @@ type serviceOpts struct {
 
 var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
 
-// ServiceOption is used for service configuration
-type ServiceOption func(*serviceOpts)
-
 // ExposePing exposes ping to the list in the service, allowing not only
-// connectivity check
+// connectivity check.
 func ExposePing(b bool) ServiceOption {
 	return func(o *serviceOpts) {
 		o.exposePing = b
 	}
 }
 
-// DisclosureErrors returns errors without replacing by a generic message
+// DisclosureErrors returns errors without replacing by a generic message.
 func DisclosureErrors(b bool) ServiceOption {
 	return func(o *serviceOpts) {
 		o.disclosureErr = b
 	}
 }
 
-// SetServiceLogger option allows set a custom logger
+// SetServiceLogger option allows set a custom logger.
 func SetServiceLogger(l yalogi.Logger) ServiceOption {
 	return func(o *serviceOpts) {
 		if l != nil {
@@ -59,7 +58,7 @@ func SetServiceLogger(l yalogi.Logger) ServiceOption {
 	}
 }
 
-// NewService returns a new Service for the cheker
+// NewService returns a new Service.
 func NewService(checker xlist.Checker, opt ...ServiceOption) *Service {
 	opts := defaultServiceOpts
 	for _, o := range opt {
@@ -68,12 +67,12 @@ func NewService(checker xlist.Checker, opt ...ServiceOption) *Service {
 	return &Service{checker: checker, opts: opts, logger: opts.logger}
 }
 
-// RegisterServer registers a service in the grpc server
+// RegisterServer registers a service in the grpc server.
 func RegisterServer(server *grpc.Server, service *Service) {
 	pb.RegisterCheckServer(server, service)
 }
 
-// Check implements grpc handler for Check
+// Check implements grpc api.
 func (s *Service) Check(ctx context.Context, in *pb.CheckRequest) (*pb.CheckResponse, error) {
 	//parse request
 	name := in.GetName()
@@ -93,7 +92,7 @@ func (s *Service) Check(ctx context.Context, in *pb.CheckRequest) (*pb.CheckResp
 	return reply, nil
 }
 
-// Resources implements grpc handler for Resources
+// Resources implements grpc api.
 func (s *Service) Resources(ctx context.Context, in *empty.Empty) (*pb.ResourcesResponse, error) {
 	resources := s.checker.Resources()
 	retres := make([]pb.Resource, 0, len(resources))
@@ -103,7 +102,7 @@ func (s *Service) Resources(ctx context.Context, in *empty.Empty) (*pb.Resources
 	return &pb.ResourcesResponse{Resources: retres}, nil
 }
 
-// Ping implements grpc handler for Ping
+// Ping implements grpc handler for Ping.
 func (s *Service) Ping(ctx context.Context, in *empty.Empty) (*empty.Empty, error) {
 	if s.opts.exposePing {
 		err := s.checker.Ping()

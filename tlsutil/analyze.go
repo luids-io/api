@@ -8,18 +8,18 @@ import (
 	"time"
 )
 
-// AnalyzerFactory interface is used for create Analyzer services
+// AnalyzerFactory interface is used for create Analyzer services.
 type AnalyzerFactory interface {
 	NewAnalyzer(name string) (Analyzer, error)
 }
 
-// Analyzer interface defines analyzer methods
+// Analyzer interface defines analyzer methods.
 type Analyzer interface {
 	SendMessage(m *Msg) error
 	Close() error
 }
 
-// Msg defines message for analyzer
+// Msg defines message for analyzer.
 type Msg struct {
 	Type     MsgType
 	StreamID int64
@@ -38,10 +38,10 @@ func (m *Msg) String() string {
 	return s
 }
 
-// MsgType defines message types
+// MsgType defines message types.
 type MsgType int8
 
-// Type possible values
+// Type possible values.
 const (
 	DataMsg MsgType = iota
 	OpenMsg
@@ -61,7 +61,7 @@ func (m MsgType) String() string {
 	}
 }
 
-// MsgOpen stores required data by the open message
+// MsgOpen stores required data by the open message.
 type MsgOpen struct {
 	SrcIP, DstIP     net.IP
 	SrcPort, DstPort int
@@ -72,7 +72,7 @@ func (m *MsgOpen) String() string {
 		m.SrcIP, m.SrcPort, m.DstIP, m.DstPort)
 }
 
-// MsgData stores required data by the data message
+// MsgData stores required data by the data message.
 type MsgData struct {
 	Timestamp        time.Time
 	Bytes            int

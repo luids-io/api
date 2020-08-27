@@ -13,10 +13,10 @@ import (
 	"strings"
 )
 
-// Resource stores the type of resource used by the RBLs
+// Resource stores the type of resource used by the RBLs.
 type Resource int
 
-// List of valid resources at the current time
+// List of valid resources at the current time.
 const (
 	IPv4 Resource = iota
 	IPv6
@@ -27,10 +27,10 @@ const (
 )
 
 // Resources is an ordered vector that constains all valid resource values.
-// Warning: It's a variable for simplicity, Do not modify the value!
+// Warning: It's a variable for simplicity, Do not modify the value!.
 var Resources = []Resource{IPv4, IPv6, Domain, MD5, SHA1, SHA256}
 
-// IsValid returns true if the resource value is a valid
+// IsValid returns true if the resource value is a valid.
 func (r Resource) IsValid() bool {
 	v := int(r)
 	if v >= int(IPv4) && v <= int(SHA256) {
@@ -40,7 +40,7 @@ func (r Resource) IsValid() bool {
 }
 
 // InArray returns true if the resource value exists in the array passed
-// as parameter
+// as parameter.
 func (r Resource) InArray(array []Resource) bool {
 	for _, c := range array {
 		if r == c {
@@ -69,7 +69,6 @@ func (r Resource) string() string {
 	}
 }
 
-// String implements stringer interface
 func (r Resource) String() string {
 	s := r.string()
 	if s == "" {
@@ -78,7 +77,7 @@ func (r Resource) String() string {
 	return s
 }
 
-// ToResource returns the resource type from its string representation
+// ToResource returns the resource type from its string representation.
 func ToResource(s string) (Resource, error) {
 	switch strings.ToLower(s) {
 	case "ip4":
@@ -98,7 +97,7 @@ func ToResource(s string) (Resource, error) {
 	}
 }
 
-// MarshalJSON implements interface for struct marshalling
+// MarshalJSON implements interface for struct marshalling.
 func (r Resource) MarshalJSON() ([]byte, error) {
 	s := r.string()
 	if s == "" {
@@ -107,7 +106,7 @@ func (r Resource) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s)
 }
 
-// UnmarshalJSON implements interface for struct unmarshalling
+// UnmarshalJSON implements interface for struct unmarshalling.
 func (r *Resource) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
@@ -137,7 +136,7 @@ func (r *Resource) UnmarshalJSON(data []byte) error {
 	}
 }
 
-// ValidResource returns true if the name is of the resource type
+// ValidResource returns true if the name is of the resource type.
 func ValidResource(name string, resource Resource) bool {
 	switch resource {
 	case IPv4:
@@ -158,7 +157,7 @@ func ValidResource(name string, resource Resource) bool {
 }
 
 // Canonicalize returns true if the name is of the resource type and returns
-// a string with name canonicalized to the resource type
+// a string with name canonicalized to the resource type.
 func Canonicalize(name string, resource Resource) (string, bool) {
 	switch resource {
 	case IPv4:
@@ -197,11 +196,10 @@ const (
 )
 
 // DoValidation validates the name and the resource type, and canonicalizes
-// de name. If the resource
-// is valid, it will return a context with a flag that indicates that
-// future calls to the function should not validate the resource again,
-// avoiding redundant validations. A validation can be forced if the force
-// flag is set.
+// de name. If the resource is valid, it will return a context with a flag
+// that indicates that future calls to the function should not validate the
+// resource again, avoiding redundant validations. A validation can be forced
+// if the force flag is set.
 // If the validation is not successful, and error will be returned.
 // This function must be used by the components that implement the interface
 // Check and it should not be used outside of this context.
@@ -224,9 +222,9 @@ func DoValidation(ctx context.Context, name string, resource Resource, force boo
 	return canon, context.WithValue(ctx, keyValidated, true), nil
 }
 
-// ClearResourceDups returns an array with duplicate and invalid resource items
-// removed
-func ClearResourceDups(resources []Resource) []Resource {
+// ClearResourceDups returns an ordered array (if doShort) with duplicate and
+// invalid resource items removed.
+func ClearResourceDups(resources []Resource, doShort bool) []Resource {
 	ret := make([]Resource, 0, len(Resources))
 	copied := make([]bool, len(Resources), len(Resources))
 	for _, r := range resources {
@@ -238,7 +236,9 @@ func ClearResourceDups(resources []Resource) []Resource {
 			copied[int(r)] = true
 		}
 	}
-	sort.Slice(ret, func(i, j int) bool { return ret[i] < ret[j] })
+	if doShort {
+		sort.Slice(ret, func(i, j int) bool { return ret[i] < ret[j] })
+	}
 	return ret
 }
 
