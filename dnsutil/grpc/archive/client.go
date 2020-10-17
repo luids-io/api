@@ -7,13 +7,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/status"
 
 	"github.com/luids-io/api/dnsutil"
+	"github.com/luids-io/api/dnsutil/grpc/encoding"
 	"github.com/luids-io/api/dnsutil/grpc/pb"
 	"github.com/luids-io/core/yalogi"
 )
@@ -73,34 +73,21 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 }
 
 // SaveResolv implements dnsutil.Archiver interface.
-func (c *Client) SaveResolv(ctx context.Context, data dnsutil.ResolvData) (string, error) {
+func (c *Client) SaveResolv(ctx context.Context, data *dnsutil.ResolvData) (string, error) {
 	if c.closed {
-		c.logger.Warnf("client.dnsutil.archive: saveresolv(%s,%v): client is closed", data.Name, data.Client)
+		c.logger.Warnf("client.dnsutil.archive: saveresolv(%v,%v): client is closed", data.Client, data.QID)
 		return "", dnsutil.ErrUnavailable
 	}
 	//create request
-	tstamp, _ := ptypes.TimestampProto(data.Timestamp)
-	req := &pb.SaveResolvRequest{
-		Ts:                tstamp,
-		Duration:          int64(data.Duration),
-		ServerIp:          data.Server.String(),
-		ClientIp:          data.Client.String(),
-		Qid:               int32(data.QID),
-		Name:              data.Name,
-		CheckingDisabled:  data.CheckingDisabled,
-		ReturnCode:        int32(data.ReturnCode),
-		AuthenticatedData: data.AuthenticatedData,
-	}
-	if len(data.Resolved) > 0 {
-		req.ResolvedIps = make([]string, 0, len(data.Resolved))
-		for _, r := range data.Resolved {
-			req.ResolvedIps = append(req.ResolvedIps, r.String())
-		}
+	req, err := encoding.SaveResolvRequest(data)
+	if err != nil {
+		c.logger.Warnf("client.dnsutil.archive: saveresolv(%v,%v): %v", data.Client, data.QID, err)
+		return "", c.mapError(dnsutil.ErrBadRequest)
 	}
 	//do save
 	resp, err := c.client.SaveResolv(ctx, req)
 	if err != nil {
-		c.logger.Warnf("client.dnsutil.archive: saveresolv(%s,%v): %v", data.Name, data.Client, err)
+		c.logger.Warnf("client.dnsutil.archive: saveresolv(%v,%v): %v", data.Client, data.QID, err)
 		return "", c.mapError(err)
 	}
 	return resp.GetId(), nil

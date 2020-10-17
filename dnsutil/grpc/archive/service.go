@@ -4,17 +4,14 @@ package archive
 
 import (
 	"context"
-	"errors"
-	"net"
-	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
 	"github.com/luids-io/api/dnsutil"
+	"github.com/luids-io/api/dnsutil/grpc/encoding"
 	"github.com/luids-io/api/dnsutil/grpc/pb"
 	"github.com/luids-io/core/yalogi"
 )
@@ -59,50 +56,20 @@ func RegisterServer(server *grpc.Server, service *Service) {
 
 // SaveResolv implements grpc interface.
 func (s *Service) SaveResolv(ctx context.Context, req *pb.SaveResolvRequest) (*pb.SaveResolvResponse, error) {
-	//parse request
-	data, err := parseRequest(req)
+	//get request
+	data, err := encoding.FromSaveResolvRequest(req)
 	if err != nil {
-		s.logger.Warnf("service.dnsutil.archive: [peer=%s] saveresolv(%s,%v): %v", getPeerAddr(ctx), data.Name, data.Client, err)
+		s.logger.Warnf("service.dnsutil.archive: [peer=%s] saveresolv(%v,%v): %v", getPeerAddr(ctx), data.Client, data.QID, err)
 		return nil, s.mapError(dnsutil.ErrBadRequest)
 	}
-	//do request
+	//do save
 	newid, err := s.archiver.SaveResolv(ctx, data)
 	if err != nil {
-		s.logger.Warnf("service.dnsutil.archive: [peer=%s] saveresolv(%s,%v): %v", getPeerAddr(ctx), data.Name, data.Client, err)
+		s.logger.Warnf("service.dnsutil.archive: [peer=%s] saveresolv(%v,%v): %v", getPeerAddr(ctx), data.Client, data.QID, err)
 		return nil, s.mapError(err)
 	}
 	//return response
 	return &pb.SaveResolvResponse{Id: newid}, nil
-}
-
-func parseRequest(req *pb.SaveResolvRequest) (dnsutil.ResolvData, error) {
-	i := dnsutil.ResolvData{}
-	i.Timestamp, _ = ptypes.Timestamp(req.GetTs())
-	i.Duration = time.Duration(req.GetDuration())
-	i.Server = net.ParseIP(req.GetServerIp())
-	if i.Server == nil {
-		return i, errors.New("bad server ip")
-	}
-	i.Client = net.ParseIP(req.GetClientIp())
-	if i.Client == nil {
-		return i, errors.New("bad client ip")
-	}
-	i.QID = uint16(req.GetQid())
-	i.Name = req.GetName()
-	i.CheckingDisabled = req.GetCheckingDisabled()
-	i.ReturnCode = int(req.GetReturnCode())
-	i.AuthenticatedData = req.GetAuthenticatedData()
-	if len(req.GetResolvedIps()) > 0 {
-		i.Resolved = make([]net.IP, 0, len(req.GetResolvedIps()))
-		for _, r := range req.GetResolvedIps() {
-			ip := net.ParseIP(r)
-			if ip == nil {
-				return i, errors.New("bad resolved ip")
-			}
-			i.Resolved = append(i.Resolved, ip)
-		}
-	}
-	return i, nil
 }
 
 //mapping errors
