@@ -49,5 +49,6 @@ func FromNotifyEventRequest(req *pb.NotifyEventRequest) (event.Event, error) {
 	if err != nil {
 		return event.Event{}, err
 	}
+	e.Duplicates = int(req.GetDuplicates())
 	return e, nil
 }
