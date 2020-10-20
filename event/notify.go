@@ -17,6 +17,7 @@ type Notifier interface {
 // NotifyBuffer is the interface for event buffer implementations.
 type NotifyBuffer interface {
 	PushEvent(e Event) error
+	Close()
 }
 
 // SetBuffer sets the default buffer instance.

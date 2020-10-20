@@ -18,12 +18,14 @@ message SaveEventRequest {
   int32      code = 3;
   EventLevel level = 4;
   google.protobuf.Timestamp created_ts  = 5;
-  EventSource source = 6;
-  repeated ProcessInfo processors = 7;
-  EventData data = 8;
-  string codename = 9;
-  string description = 10;
-  repeated string tags = 11;
+  google.protobuf.Timestamp received_ts  = 6;
+  EventSource source = 7;
+  repeated ProcessInfo processors = 8;
+  EventData data = 9;
+  int32 duplicates = 10;
+  string codename = 11;
+  string description = 12;
+  repeated string tags = 13;
 }
 
 message SaveEventResponse {

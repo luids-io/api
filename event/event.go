@@ -14,14 +14,16 @@ import (
 // Event stores event info.
 type Event struct {
 	// info completed on construction
-	Code    Code                   `json:"code"`
-	Level   Level                  `json:"level"`
-	Created time.Time              `json:"created"`
-	Source  Source                 `json:"source"`
-	Data    map[string]interface{} `json:"data,omitempty" bson:",omitempty"`
+	Code       Code                   `json:"code"`
+	Level      Level                  `json:"level"`
+	Created    time.Time              `json:"created"`
+	Source     Source                 `json:"source"`
+	Duplicates int                    `json:"duplicates"`
+	Data       map[string]interface{} `json:"data,omitempty" bson:",omitempty"`
 	// info completed by Notifier
 	ID          string        `json:"id" bson:"_id"`
 	Type        Type          `json:"type"`
+	Received    time.Time     `json:"received"`
 	Codename    string        `json:"codename"`
 	Description string        `json:"description"`
 	Processors  []ProcessInfo `json:"processors,omitempty" bson:",omitempty"`

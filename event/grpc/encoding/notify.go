@@ -23,6 +23,7 @@ func NotifyEventRequest(e event.Event) (*pb.NotifyEventRequest, error) {
 	if err != nil {
 		return nil, err
 	}
+	req.Duplicates = int32(e.Duplicates)
 	return req, nil
 }
 

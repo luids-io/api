@@ -20,6 +20,7 @@ func ForwardEventRequest(e event.Event) (*pb.ForwardEventRequest, error) {
 	req.Code = int32(e.Code)
 	req.Level = pb.EventLevel(e.Level)
 	req.CreatedTs, _ = ptypes.TimestampProto(e.Created)
+	req.ReceivedTs, _ = ptypes.TimestampProto(e.Received)
 	req.Source = SourcePB(e.Source)
 	if len(e.Processors) > 0 {
 		req.Processors = make([]*pb.ProcessInfo, 0, len(e.Processors)+1)
@@ -31,6 +32,7 @@ func ForwardEventRequest(e event.Event) (*pb.ForwardEventRequest, error) {
 	if err != nil {
 		return nil, err
 	}
+	req.Duplicates = int32(e.Duplicates)
 	req.Codename = e.Codename
 	req.Description = e.Description
 	if len(e.Tags) > 0 {
@@ -49,6 +51,7 @@ func FromForwardEventRequest(req *pb.ForwardEventRequest) (event.Event, error) {
 	e.Code = event.Code(req.GetCode())
 	e.Level = event.Level(req.GetLevel())
 	e.Created, _ = ptypes.Timestamp(req.GetCreatedTs())
+	e.Received, _ = ptypes.Timestamp(req.GetReceivedTs())
 	// get source
 	pbsource := req.GetSource()
 	if pbsource == nil {
@@ -72,6 +75,7 @@ func FromForwardEventRequest(req *pb.ForwardEventRequest) (event.Event, error) {
 	if err != nil {
 		return event.Event{}, err
 	}
+	e.Duplicates = int(req.GetDuplicates())
 	e.Codename = req.GetCodename()
 	e.Description = req.GetDescription()
 	tags := req.GetTags()

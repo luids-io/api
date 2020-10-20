@@ -18,6 +18,7 @@ message NotifyEventRequest {
   google.protobuf.Timestamp created_ts  = 3;
   EventSource source = 4;
   EventData data = 5;
+  int32 duplicates = 6;
 }
 
 message NotifyEventResponse {
