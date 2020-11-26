@@ -40,6 +40,12 @@ func SaveResolvRequest(src *dnsutil.ResolvData) (*pb.SaveResolvRequest, error) {
 			dst.ResolvedIps = append(dst.ResolvedIps, r.String())
 		}
 	}
+	if len(src.ResolvedCNAMEs) > 0 {
+		dst.ResolvedCnames = make([]string, 0, len(src.ResolvedCNAMEs))
+		for _, r := range src.ResolvedCNAMEs {
+			dst.ResolvedCnames = append(dst.ResolvedCnames, r)
+		}
+	}
 	return dst, nil
 }
 
@@ -81,6 +87,13 @@ func FromSaveResolvRequest(src *pb.SaveResolvRequest) (*dnsutil.ResolvData, erro
 				return dst, errors.New("bad resolved ip")
 			}
 			dst.ResolvedIPs = append(dst.ResolvedIPs, ip)
+		}
+	}
+	srcResolvedCNAMEs := src.GetResolvedCnames()
+	if len(srcResolvedCNAMEs) > 0 {
+		dst.ResolvedCNAMEs = make([]string, 0, len(srcResolvedCNAMEs))
+		for _, r := range srcResolvedCNAMEs {
+			dst.ResolvedCNAMEs = append(dst.ResolvedCNAMEs, r)
 		}
 	}
 	if srcResponseFlags == nil {

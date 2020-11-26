@@ -26,9 +26,10 @@ type ResolvData struct {
 	IsIPv6     bool             `json:"isIPv6"`
 	QueryFlags ResolvQueryFlags `json:"queryFlags"`
 	//response
-	ReturnCode    int                 `json:"returnCode"`
-	ResolvedIPs   []net.IP            `json:"resolvedIPs,omitempty"`
-	ResponseFlags ResolvResponseFlags `json:"responseFlags"`
+	ReturnCode     int                 `json:"returnCode"`
+	ResolvedIPs    []net.IP            `json:"resolvedIPs,omitempty"`
+	ResolvedCNAMEs []string            `json:"resolvedCNAMEs,omitempty"`
+	ResponseFlags  ResolvResponseFlags `json:"responseFlags"`
 }
 
 // ResolvQueryFlags stores information about resolv query flags

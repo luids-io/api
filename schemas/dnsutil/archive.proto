@@ -30,7 +30,8 @@ message SaveResolvRequest {
     message ResponseFlags {
         bool authenticated_data = 1;
     }
-    ResponseFlags response_flags = 11;
+    repeated string resolved_cnames = 11;
+    ResponseFlags response_flags = 12;
 }
 
 message SaveResolvResponse {
