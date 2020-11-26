@@ -59,42 +59,46 @@ func RegisterServer(server *grpc.Server, service *Service) {
 // Collect implements grpc api.
 func (s *Service) Collect(ctx context.Context, req *pb.ResolvCollectRequest) (*empty.Empty, error) {
 	//parse request
-	client, name, resolved, err := parseRequest(req)
+	client, name, resolved, cnames, err := parseRequest(req)
 	if err != nil {
-		s.logger.Warnf("service.dnsutil.resolvcollect: [peer=%s] collect(%v,%s,%v): %v", getPeerAddr(ctx), client, name, resolved, err)
+		s.logger.Warnf("service.dnsutil.resolvcollect: [peer=%s] collect(%v,%s,%v,%v): %v", getPeerAddr(ctx), client, name, resolved, cnames, err)
 		return nil, s.mapError(dnsutil.ErrBadRequest)
 	}
 	//do request
-	err = s.collector.Collect(ctx, client, name, resolved)
+	err = s.collector.Collect(ctx, client, name, resolved, cnames)
 	if err != nil {
-		s.logger.Warnf("service.dnsutil.resolvcollect: [peer=%s] collect(%v,%s,%v): %v", getPeerAddr(ctx), client, name, resolved, err)
+		s.logger.Warnf("service.dnsutil.resolvcollect: [peer=%s] collect(%v,%s,%v,%v): %v", getPeerAddr(ctx), client, name, resolved, cnames, err)
 		return nil, s.mapError(err)
 	}
 	//return response
 	return &empty.Empty{}, nil
 }
 
-func parseRequest(req *pb.ResolvCollectRequest) (net.IP, string, []net.IP, error) {
+func parseRequest(req *pb.ResolvCollectRequest) (net.IP, string, []net.IP, []string, error) {
 	client := net.ParseIP(req.GetClientIp())
 	if client == nil {
-		return nil, "", nil, errors.New("bad client ip")
+		return nil, "", nil, nil, errors.New("bad client ip")
 	}
 	name := req.GetName()
 	if name == "" {
-		return nil, "", nil, errors.New("bad dns name")
+		return nil, "", nil, nil, errors.New("bad dns name")
 	}
 	if len(req.GetResolvedIps()) == 0 {
-		return nil, "", nil, errors.New("resolved ips empty")
+		return nil, "", nil, nil, errors.New("resolved ips empty")
 	}
 	resolved := make([]net.IP, 0, len(req.GetResolvedIps()))
 	for _, r := range req.GetResolvedIps() {
 		ip := net.ParseIP(r)
 		if ip == nil {
-			return nil, "", nil, errors.New("bad resolved ip")
+			return nil, "", nil, nil, errors.New("bad resolved ip")
 		}
 		resolved = append(resolved, ip)
 	}
-	return client, name, resolved, nil
+	cnames := make([]string, 0, len(req.GetResolvedCnames()))
+	for _, r := range req.GetResolvedCnames() {
+		cnames = append(cnames, r)
+	}
+	return client, name, resolved, cnames, nil
 }
 
 //mapping checking errors

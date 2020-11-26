@@ -17,7 +17,7 @@ type ResolvCache interface {
 // ResolvCollector interface collects to the cache resolved ip address
 // information.
 type ResolvCollector interface {
-	Collect(ctx context.Context, client net.IP, name string, resolved []net.IP) error
+	Collect(ctx context.Context, client net.IP, name string, resolved []net.IP, cnames []string) error
 }
 
 // ResolvChecker is the interface for checks in a resolv cache.

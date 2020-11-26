@@ -73,23 +73,28 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 }
 
 // Collect implements dnsutil.ResolvCollector interface.
-func (c *Client) Collect(ctx context.Context, client net.IP, name string, resolved []net.IP) error {
+func (c *Client) Collect(ctx context.Context, client net.IP, name string, resolved []net.IP, cnames []string) error {
 	if c.closed {
-		c.logger.Warnf("client.dnsutil.resolvcollect: collect(%v,%s,%v): client is closed", client, name, resolved)
+		c.logger.Warnf("client.dnsutil.resolvcollect: collect(%v,%s,%v,%v): client is closed", client, name, resolved, cnames)
 		return dnsutil.ErrUnavailable
 	}
 	rr := make([]string, 0, len(resolved))
 	for _, r := range resolved {
 		rr = append(rr, r.String())
 	}
+	rcnames := make([]string, 0, len(cnames))
+	for _, r := range cnames {
+		rcnames = append(rcnames, r)
+	}
 	req := &pb.ResolvCollectRequest{
-		ClientIp:    client.String(),
-		Name:        name,
-		ResolvedIps: rr,
+		ClientIp:       client.String(),
+		Name:           name,
+		ResolvedIps:    rr,
+		ResolvedCnames: rcnames,
 	}
 	_, err := c.client.Collect(ctx, req)
 	if err != nil {
-		c.logger.Warnf("client.dnsutil.resolvcollect: collect(%v,%s,%v): %v", client, name, resolved, err)
+		c.logger.Warnf("client.dnsutil.resolvcollect: collect(%v,%s,%v,%v): %v", client, name, resolved, cnames, err)
 		return c.mapError(err)
 	}
 	return nil
