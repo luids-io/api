@@ -90,7 +90,7 @@ func (c *Client) SaveConnection(ctx context.Context, data *tlsutil.ConnectionDat
 	req, err := connectionToRequest(data)
 	if err != nil {
 		c.logger.Warnf("client.tlsutil.archive: saveconnection(): %v", err)
-		return "", c.mapError(err)
+		return "", tlsutil.ErrBadRequest
 	}
 	resp, err := c.client.SaveConnection(ctx, req)
 	if err != nil {
@@ -109,7 +109,7 @@ func (c *Client) SaveCertificate(ctx context.Context, data *tlsutil.CertificateD
 	req, err := certificateToRequest(data)
 	if err != nil {
 		c.logger.Warnf("client.tlsutil.archive: savecertificate(): %v", err)
-		return "", c.mapError(err)
+		return "", tlsutil.ErrBadRequest
 	}
 	resp, err := c.client.SaveCertificate(ctx, req)
 	if err != nil {

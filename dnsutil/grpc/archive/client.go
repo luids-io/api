@@ -82,7 +82,7 @@ func (c *Client) SaveResolv(ctx context.Context, data *dnsutil.ResolvData) (stri
 	req, err := encoding.SaveResolvRequest(data)
 	if err != nil {
 		c.logger.Warnf("client.dnsutil.archive: saveresolv(%v,%v): %v", data.Client, data.QID, err)
-		return "", c.mapError(dnsutil.ErrBadRequest)
+		return "", dnsutil.ErrBadRequest
 	}
 	//do save
 	resp, err := c.client.SaveResolv(ctx, req)

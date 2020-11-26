@@ -82,7 +82,7 @@ func (c *Client) ForwardEvent(ctx context.Context, e event.Event) error {
 	req, err := encoding.ForwardEventRequest(e)
 	if err != nil {
 		c.logger.Warnf("client.event.forward: forward(%v,%s): %v", e.Code, e.ID, err)
-		return c.mapError(event.ErrBadRequest)
+		return event.ErrBadRequest
 	}
 	//notify request
 	_, err = c.client.ForwardEvent(ctx, req)

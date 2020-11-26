@@ -82,7 +82,7 @@ func (c *Client) NotifyEvent(ctx context.Context, e event.Event) (string, error)
 	req, err := encoding.NotifyEventRequest(e)
 	if err != nil {
 		c.logger.Warnf("client.event.notify: notify(%v): %v", e.Code, err)
-		return "", c.mapError(event.ErrBadRequest)
+		return "", event.ErrBadRequest
 	}
 	//notify request
 	resp, err := c.client.NotifyEvent(ctx, req)

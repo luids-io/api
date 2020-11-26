@@ -76,13 +76,13 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 func (c *Client) SaveEvent(ctx context.Context, e event.Event) (string, error) {
 	if c.closed {
 		c.logger.Warnf("client.event.archive: save(%s): client is closed", e.ID)
-		return "", c.mapError(event.ErrUnavailable)
+		return "", event.ErrUnavailable
 	}
 	//create request
 	req, err := encoding.SaveEventRequest(e)
 	if err != nil {
 		c.logger.Warnf("client.event.archive: save(%s): %v", e.ID, err)
-		return "", c.mapError(event.ErrBadRequest)
+		return "", event.ErrBadRequest
 	}
 	//notify request
 	resp, err := c.client.SaveEvent(ctx, req)
