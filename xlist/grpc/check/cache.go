@@ -13,19 +13,26 @@ import (
 
 const defaultCacheCleanups = 3 * time.Minute
 
-// cache implements a cache
+// cache implements a client cache
+// client cache stores responses using defined ttls
+// minttl and maxttl are bounds to time storage in cache
 type cache struct {
-	ttl         int
-	negativettl int
-	cachei      *cacheimpl.Cache
+	minTTL int
+	maxTTL int
+	cachei *cacheimpl.Cache
+}
+
+type cacheitem struct {
+	stored time.Time
+	r      xlist.Response
 }
 
 // newCache returns a cache
-func newCache(ttl, negativettl int, cleanups time.Duration) *cache {
+func newCache(minTTL, maxTTL int, cleanups time.Duration) *cache {
 	c := &cache{
-		ttl:         ttl,
-		negativettl: negativettl,
-		cachei:      cacheimpl.New(time.Duration(ttl)*time.Second, cleanups),
+		minTTL: minTTL,
+		maxTTL: maxTTL,
+		cachei: cacheimpl.New(cacheimpl.NoExpiration, cleanups),
 	}
 	return c
 }
@@ -37,38 +44,45 @@ func (c *cache) flush() {
 
 func (c *cache) get(name string, resource xlist.Resource) (xlist.Response, bool) {
 	key := fmt.Sprintf("%s_%s", resource.String(), name)
-	hit, exp, ok := c.cachei.GetWithExpiration(key)
+	hit, ok := c.cachei.Get(key)
 	if ok {
-		r := hit.(xlist.Response)
-		if r.TTL >= 0 {
-			//updates ttl
-			ttl := exp.Sub(time.Now()).Seconds()
-			if ttl < 0 { //nonsense
+		item := hit.(cacheitem)
+		if item.r.TTL >= 0 {
+			now := time.Now()
+			//updates ttl with time stored in cache
+			fttl := now.Sub(item.stored).Seconds()
+			if fttl < 0 { //nonsense
 				panic("cache missfunction")
 			}
-			r.TTL = int(ttl)
+			ttl := item.r.TTL - int(fttl)
+			if ttl >= 0 {
+				item.r.TTL = ttl
+			} else {
+				item.r.TTL = 0
+			}
 		}
-		return r, true
+		return item.r, true
 	}
 	return xlist.Response{}, false
 }
 
 func (c *cache) set(name string, resource xlist.Resource, r xlist.Response) xlist.Response {
 	//if don't cache
-	if (r.TTL == xlist.NeverCache) || (!r.Result && c.negativettl == xlist.NeverCache) {
+	if r.TTL == xlist.NeverCache {
 		return r
 	}
-	//sets cache
-	ttl := c.ttl
-	if !r.Result && c.negativettl > 0 {
-		ttl = c.negativettl
+	//sets ttl in bounds
+	ttl := r.TTL
+	if c.minTTL > 0 && ttl < c.minTTL {
+		ttl = c.minTTL
 	}
-	if r.TTL < ttl { //minor than cachettl
-		r.TTL = ttl //sets reponse to cachettl
+	if c.maxTTL > 0 && ttl > c.maxTTL {
+		ttl = c.maxTTL
 	}
-	if r.TTL > 0 {
+	//client cache doesn't change reponse ttl, it only caches
+	if ttl > 0 {
 		key := fmt.Sprintf("%s_%s", resource.String(), name)
-		c.cachei.Set(key, r, time.Duration(r.TTL)*time.Second)
+		c.cachei.Set(key, cacheitem{stored: time.Now(), r: r}, time.Duration(ttl)*time.Second)
 	}
 	return r
 }
