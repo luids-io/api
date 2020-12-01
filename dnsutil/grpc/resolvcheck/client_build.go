@@ -45,16 +45,23 @@ func ClientBuilder(opt ...ClientOption) apiservice.BuildFn {
 				return nil, err
 			}
 			opt = append(opt, SetClientMap(cm))
+
+		}
+		if def.Cache {
+			if len(def.Opts) == 0 {
+				return nil, errors.New("'ttl' or 'negativettl' values are required with cache")
+			}
 			// parse and set cache options
 			ttl, negativettl, cleanup, err := parseCacheOpts(def.Opts)
 			if err != nil {
 				return nil, err
 			}
-			if ttl > 0 || negativettl > 0 {
-				opt = append(opt, SetCache(ttl, negativettl))
-				if cleanup > 0 {
-					opt = append(opt, SetCacheCleanUps(time.Duration(cleanup)*time.Second))
-				}
+			if ttl == 0 && negativettl == 0 {
+				return nil, errors.New("'ttl' or 'negativettl' values are required with cache")
+			}
+			opt = append(opt, SetCache(ttl, negativettl))
+			if cleanup > 0 {
+				opt = append(opt, SetCacheCleanUps(time.Duration(cleanup)*time.Second))
 			}
 		}
 		//creates client
