@@ -11,9 +11,7 @@ type Checker interface {
 	// Check method checks if the value encoded as string is in the list
 	Check(ctx context.Context, name string, r Resource) (Response, error)
 	// Resources returns an array with the resource types supported by the RBL service
-	Resources() []Resource
-	// Ping method allows to check if the RBL service is working
-	Ping() error
+	Resources(ctx context.Context) ([]Resource, error)
 }
 
 //Response stores information about the service's responses.

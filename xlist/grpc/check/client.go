@@ -5,11 +5,13 @@ package check
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/status"
 
 	"github.com/luids-io/api/xlist"
@@ -38,8 +40,8 @@ type clientOpts struct {
 	closeConn bool
 	//cache opts
 	useCache     bool
-	ttl          int
-	negativettl  int
+	minttl       int
+	maxttl       int
 	cacheCleanup time.Duration
 }
 
@@ -66,11 +68,11 @@ func SetLogger(l yalogi.Logger) ClientOption {
 }
 
 // SetCache sets cache ttl and negative ttl.
-func SetCache(ttl, negativettl int) ClientOption {
+func SetCache(minttl, maxttl int) ClientOption {
 	return func(o *clientOpts) {
-		if ttl >= xlist.NeverCache && negativettl >= xlist.NeverCache {
-			o.ttl = ttl
-			o.negativettl = negativettl
+		if minttl >= 0 && maxttl >= 0 {
+			o.minttl = minttl
+			o.maxttl = maxttl
 			o.useCache = true
 		}
 	}
@@ -98,7 +100,7 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 		client: pb.NewCheckClient(conn),
 	}
 	if opts.useCache {
-		c.cache = newCache(opts.ttl, opts.negativettl, opts.cacheCleanup)
+		c.cache = newCache(opts.minttl, opts.maxttl, opts.cacheCleanup)
 	}
 	return c
 }
@@ -128,21 +130,36 @@ func (c *Client) Check(ctx context.Context, name string, resource xlist.Resource
 }
 
 // Resources implements xlist.Checker interface.
-func (c *Client) Resources() []xlist.Resource {
+func (c *Client) Resources(ctx context.Context) ([]xlist.Resource, error) {
 	if c.closed {
 		c.logger.Warnf("client.xlist.check: resources(): client is closed")
-		return nil
+		return nil, xlist.ErrUnavailable
 	}
-	return c.doResources(context.Background())
+	resp, err := c.client.Resources(ctx, &empty.Empty{})
+	if err != nil {
+		c.logger.Warnf("client.xlist.check: resources(): %v", err)
+		return []xlist.Resource{}, c.mapError(err)
+	}
+	resources := make([]xlist.Resource, 0, len(resp.Resources))
+	for _, r := range resp.Resources {
+		resources = append(resources, xlist.Resource(r))
+	}
+	return resources, nil
 }
 
-// Ping implements xlist.Checker interface.
+// Ping checks connectivity with the api.
 func (c *Client) Ping() error {
 	if c.closed {
-		c.logger.Warnf("client.xlist.check: ping(): client is closed")
-		return errors.New("client is closed")
+		return errors.New("client closed")
 	}
-	return c.doPing(context.Background())
+	st := c.conn.GetState()
+	switch st {
+	case connectivity.TransientFailure:
+		return fmt.Errorf("connection state: %v", st)
+	case connectivity.Shutdown:
+		return fmt.Errorf("connection state: %v", st)
+	}
+	return nil
 }
 
 func (c *Client) doCheck(ctx context.Context, name string, resource xlist.Resource) (xlist.Response, error) {
@@ -157,24 +174,6 @@ func (c *Client) doCheck(ctx context.Context, name string, resource xlist.Resour
 		Reason: res.GetReason(),
 		TTL:    int(res.GetTTL())}
 	return r, nil
-}
-
-func (c *Client) doResources(ctx context.Context) []xlist.Resource {
-	resp, err := c.client.Resources(ctx, &empty.Empty{})
-	if err != nil {
-		c.logger.Warnf("client.xlist.check: resources(): %v", err)
-		return []xlist.Resource{}
-	}
-	resources := make([]xlist.Resource, 0, len(resp.Resources))
-	for _, r := range resp.Resources {
-		resources = append(resources, xlist.Resource(r))
-	}
-	return resources
-}
-
-func (c *Client) doPing(ctx context.Context) error {
-	_, err := c.client.Ping(ctx, &empty.Empty{})
-	return err
 }
 
 //mapping errors

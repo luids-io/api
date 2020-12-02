@@ -10,7 +10,6 @@ option go_package = "github.com/luids-io/api/xlist/grpc/pb";
 service Check {
   rpc Check(CheckRequest) returns (CheckResponse) {}
   rpc Resources(google.protobuf.Empty) returns (ResourcesResponse) {}
-  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
 
 //enums

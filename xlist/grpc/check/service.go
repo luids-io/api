@@ -27,27 +27,10 @@ type Service struct {
 type ServiceOption func(*serviceOpts)
 
 type serviceOpts struct {
-	logger        yalogi.Logger
-	exposePing    bool
-	disclosureErr bool
+	logger yalogi.Logger
 }
 
 var defaultServiceOpts = serviceOpts{logger: yalogi.LogNull}
-
-// ExposePing exposes ping to the list in the service, allowing not only
-// connectivity check.
-func ExposePing(b bool) ServiceOption {
-	return func(o *serviceOpts) {
-		o.exposePing = b
-	}
-}
-
-// DisclosureErrors returns errors without replacing by a generic message.
-func DisclosureErrors(b bool) ServiceOption {
-	return func(o *serviceOpts) {
-		o.disclosureErr = b
-	}
-}
 
 // SetServiceLogger option allows set a custom logger.
 func SetServiceLogger(l yalogi.Logger) ServiceOption {
@@ -94,27 +77,15 @@ func (s *Service) Check(ctx context.Context, in *pb.CheckRequest) (*pb.CheckResp
 
 // Resources implements grpc api.
 func (s *Service) Resources(ctx context.Context, in *empty.Empty) (*pb.ResourcesResponse, error) {
-	resources := s.checker.Resources()
+	resources, err := s.checker.Resources(ctx)
+	if err != nil {
+		return nil, s.mapError(err)
+	}
 	retres := make([]pb.Resource, 0, len(resources))
 	for _, r := range resources {
 		retres = append(retres, pb.Resource(r))
 	}
 	return &pb.ResourcesResponse{Resources: retres}, nil
-}
-
-// Ping implements grpc handler for Ping.
-func (s *Service) Ping(ctx context.Context, in *empty.Empty) (*empty.Empty, error) {
-	if s.opts.exposePing {
-		err := s.checker.Ping()
-		if err != nil {
-			rpcerr := status.Error(codes.Unavailable, xlist.ErrUnavailable.Error())
-			if s.opts.disclosureErr {
-				rpcerr = status.Error(codes.Unavailable, err.Error())
-			}
-			return nil, rpcerr
-		}
-	}
-	return &empty.Empty{}, nil
 }
 
 //mapping checking errors
