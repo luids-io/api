@@ -1,0 +1,73 @@
+// Copyright 2019 Luis Guillén Civera <luisguillenc@gmail.com>. View LICENSE.
+
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package luids.dnsutil.v1;
+option go_package = "github.com/luids-io/api/dnsutil/grpc/pb";
+
+service Finder {
+    rpc GetResolv (GetResolvRequest) returns (GetResolvResponse) {}
+    rpc ListResolvs (ListResolvsRequest) returns (ListResolvsResponse) {}
+}
+
+message ResolvData {
+    string id = 1;
+    google.protobuf.Timestamp ts = 2;
+    int64 duration = 3;
+    string server_ip = 4;
+    string client_ip = 5;
+    int32 qid = 6;
+    string name = 7;
+    bool is_ipv6 = 8;
+    message QueryFlags {
+        bool do = 1;
+        bool authenticated_data = 2;
+        bool checking_disabled = 3;
+    }
+    QueryFlags query_flags = 9;
+    int32 return_code = 10;
+    repeated string resolved_ips = 11;
+    message ResponseFlags {
+        bool authenticated_data = 1;
+    }
+    repeated string resolved_cnames = 12;
+    ResponseFlags response_flags = 13;
+    string tld = 14;
+    string tld_plus_one = 15;
+}
+
+message GetResolvRequest {
+    string id = 1;
+}
+
+message GetResolvResponse {
+    ResolvData data = 1;
+}
+
+message ResolvsFilter {
+    google.protobuf.Timestamp since = 1;
+    google.protobuf.Timestamp to = 2;
+    string server_ip = 3;
+    string client_ip = 4;
+    string name = 5;
+    string resolved_ip = 6;
+    string resolved_cname = 7;
+    int32 qid = 8;
+    int32 return_code = 9;
+    string tld = 10;
+    string tld_plus_one = 11;
+}
+
+message ListResolvsRequest {
+    int32 max = 1;
+    string next = 2;
+    repeated ResolvsFilter filters = 3;
+    bool reverse = 4;
+}
+
+message ListResolvsResponse {
+    repeated ResolvData data = 1;
+    string next = 2;
+}

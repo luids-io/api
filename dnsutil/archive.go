@@ -30,6 +30,9 @@ type ResolvData struct {
 	ResolvedIPs    []net.IP            `json:"resolvedIPs,omitempty"`
 	ResolvedCNAMEs []string            `json:"resolvedCNAMEs,omitempty"`
 	ResponseFlags  ResolvResponseFlags `json:"responseFlags"`
+	//tld calculated info
+	TLD        string `json:"tld"`
+	TLDPlusOne string `json:"tldPlusOne"`
 }
 
 // ResolvQueryFlags stores information about resolv query flags

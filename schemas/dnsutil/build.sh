@@ -9,3 +9,4 @@ PATH=$GOPATH/bin:$PATH
 
 protoc -I $GOPATH/src -I . $SRCDIR/resolv.proto --go_out=plugins=grpc:$GOPATH/src
 protoc -I $GOPATH/src -I . $SRCDIR/archive.proto --go_out=plugins=grpc:$GOPATH/src
+protoc -I $GOPATH/src -I . $SRCDIR/finder.proto --go_out=plugins=grpc:$GOPATH/src
