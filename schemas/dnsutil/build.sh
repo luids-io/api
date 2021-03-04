@@ -7,6 +7,7 @@ SRCDIR=$(dirname $(readlink -f "$0"))
 GOPATH="${GOPATH:-$HOME/go}"
 PATH=$GOPATH/bin:$PATH
 
-protoc -I $GOPATH/src -I . $SRCDIR/resolv.proto --go_out=plugins=grpc:$GOPATH/src
+protoc -I $GOPATH/src -I . $SRCDIR/common.proto --go_out=plugins=grpc:$GOPATH/src
 protoc -I $GOPATH/src -I . $SRCDIR/archive.proto --go_out=plugins=grpc:$GOPATH/src
 protoc -I $GOPATH/src -I . $SRCDIR/finder.proto --go_out=plugins=grpc:$GOPATH/src
+protoc -I $GOPATH/src -I . $SRCDIR/resolvcache.proto --go_out=plugins=grpc:$GOPATH/src

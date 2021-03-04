@@ -6,16 +6,18 @@ import (
 	"context"
 	"net"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Archiver is the interface for archive DNS information.
 type Archiver interface {
-	SaveResolv(context.Context, *ResolvData) (string, error)
+	SaveResolv(context.Context, ResolvData) (uuid.UUID, error)
 }
 
 // ResolvData stores information about DNS domain name resolutions.
 type ResolvData struct {
-	ID        string        `json:"id"`
+	ID        uuid.UUID     `json:"id"`
 	Timestamp time.Time     `json:"timestamp"`
 	Duration  time.Duration `json:"duration"`
 	Server    net.IP        `json:"server"`

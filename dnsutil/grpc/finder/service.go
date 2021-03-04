@@ -5,6 +5,7 @@ package finder
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -61,7 +62,12 @@ func (s *Service) GetResolv(ctx context.Context, req *pb.GetResolvRequest) (*pb.
 		s.logger.Warnf("service.dnsutil.finder: [peer=%s] getresolv(): id is empty", getPeerAddr(ctx))
 		return nil, s.mapError(dnsutil.ErrBadRequest)
 	}
-	data, exists, err := s.finder.GetResolv(ctx, id)
+	rid, err := uuid.Parse(id)
+	if err != nil {
+		s.logger.Warnf("service.dnsutil.finder: [peer=%s] getresolv(%v): %v", getPeerAddr(ctx), id, err)
+		return nil, s.mapError(dnsutil.ErrBadRequest)
+	}
+	rd, exists, err := s.finder.GetResolv(ctx, rid)
 	if err != nil {
 		s.logger.Warnf("service.dnsutil.finder: [peer=%s] getresolv(%s): %v", getPeerAddr(ctx), id, err)
 		return nil, s.mapError(err)
@@ -69,12 +75,13 @@ func (s *Service) GetResolv(ctx context.Context, req *pb.GetResolvRequest) (*pb.
 	if !exists {
 		return nil, status.Error(codes.NotFound, "resolv not found")
 	}
-	datapb, err := encoding.ResolvDataPB(&data)
+	rdpb := &pb.ResolvData{}
+	err = encoding.ResolvDataPB(&rd, rdpb)
 	if err != nil {
 		s.logger.Warnf("service.dnsutil.finder: [peer=%s] getresolv(%s): encoding pb: %v", getPeerAddr(ctx), id, err)
 		return nil, s.mapError(err)
 	}
-	return &pb.GetResolvResponse{Data: datapb}, nil
+	return &pb.GetResolvResponse{Data: rdpb}, nil
 }
 
 // ListResolvs implements grpc interface.
@@ -85,18 +92,18 @@ func (s *Service) ListResolvs(ctx context.Context, req *pb.ListResolvsRequest) (
 		s.logger.Warnf("service.dnsutil.finder: [peer=%s] listresolvs(): bad max", getPeerAddr(ctx))
 		return nil, s.mapError(dnsutil.ErrBadRequest)
 	}
-	reverse := req.GetReverse()
 	filters := make([]dnsutil.ResolvsFilter, 0, len(req.GetFilters()))
-	for _, f := range req.GetFilters() {
-		nf, err := encoding.ResolvsFilter(f)
+	for _, rfpb := range req.GetFilters() {
+		var rf dnsutil.ResolvsFilter
+		err := encoding.ResolvsFilter(rfpb, &rf)
 		if err != nil {
 			s.logger.Warnf("service.dnsutil.finder: [peer=%s] listresolvs(): bad filter: %v", getPeerAddr(ctx), err)
 			return nil, s.mapError(dnsutil.ErrBadRequest)
 		}
-		filters = append(filters, nf)
+		filters = append(filters, rf)
 	}
 	//do list
-	data, next, err := s.finder.ListResolvs(ctx, filters, reverse, max, req.GetNext())
+	data, next, err := s.finder.ListResolvs(ctx, filters, req.GetReverse(), max, req.GetNext())
 	if err != nil {
 		s.logger.Warnf("service.dnsutil.finder: [peer=%s] listresolvs(): %v", getPeerAddr(ctx), err)
 		return nil, s.mapError(err)
@@ -106,13 +113,14 @@ func (s *Service) ListResolvs(ctx context.Context, req *pb.ListResolvsRequest) (
 		Next: next,
 		Data: make([]*pb.ResolvData, 0, len(data)),
 	}
-	for _, r := range data {
-		pbdata, err := encoding.ResolvDataPB(&r)
+	for _, rd := range data {
+		rdpb := &pb.ResolvData{}
+		err := encoding.ResolvDataPB(&rd, rdpb)
 		if err != nil {
 			s.logger.Warnf("service.dnsutil.finder: [peer=%s] listresolvs(): %v", getPeerAddr(ctx), err)
 			return nil, s.mapError(err)
 		}
-		resp.Data = append(resp.Data, pbdata)
+		resp.Data = append(resp.Data, rdpb)
 	}
 	return resp, nil
 }

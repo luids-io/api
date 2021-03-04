@@ -6,11 +6,13 @@ import (
 	"context"
 	"net"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Finder is the interface for archive finder DNS information.
 type Finder interface {
-	GetResolv(ctx context.Context, id string) (ResolvData, bool, error)
+	GetResolv(ctx context.Context, id uuid.UUID) (ResolvData, bool, error)
 	ListResolvs(ctx context.Context, filters []ResolvsFilter, rev bool, max int, next string) ([]ResolvData, string, error)
 }
 

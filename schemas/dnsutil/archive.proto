@@ -2,7 +2,7 @@
 
 syntax = "proto3";
 
-import "google/protobuf/timestamp.proto";
+import "github.com/luids-io/api/schemas/dnsutil/common.proto";
 
 package luids.dnsutil.v1;
 option go_package = "github.com/luids-io/api/dnsutil/grpc/pb";
@@ -12,26 +12,7 @@ service Archive {
 }
 
 message SaveResolvRequest {
-    google.protobuf.Timestamp ts = 1; 
-    int64 duration = 2;
-    string server_ip = 3;
-    string client_ip = 4;
-    int32 qid = 5;
-    string name = 6;
-    bool is_ipv6 = 7;
-    message QueryFlags {
-        bool do = 1;
-        bool authenticated_data = 2;
-        bool checking_disabled = 3;
-    }
-    QueryFlags query_flags = 8;
-    int32 return_code = 9;
-    repeated string resolved_ips = 10;
-    message ResponseFlags {
-        bool authenticated_data = 1;
-    }
-    repeated string resolved_cnames = 11;
-    ResponseFlags response_flags = 12;
+    ResolvData resolv = 1;
 }
 
 message SaveResolvResponse {

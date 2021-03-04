@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/status"
 
+	"github.com/google/uuid"
 	"github.com/luids-io/api/dnsutil"
 	"github.com/luids-io/api/dnsutil/grpc/encoding"
 	"github.com/luids-io/api/dnsutil/grpc/pb"
@@ -73,36 +74,39 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 }
 
 // GetResolv implements dnsutil.Finder interface
-func (c *Client) GetResolv(ctx context.Context, id string) (dnsutil.ResolvData, bool, error) {
+func (c *Client) GetResolv(ctx context.Context, id uuid.UUID) (dnsutil.ResolvData, bool, error) {
 	if c.closed {
-		c.logger.Warnf("client.dnsutil.finder: getresolv(%s): client is closed", id)
+		c.logger.Warnf("client.dnsutil.finder: getresolv(%v): client is closed", id)
 		return dnsutil.ResolvData{}, false, dnsutil.ErrUnavailable
 	}
 	//check req
-	if id == "" {
+	sid := id.String()
+	if sid == "" {
 		c.logger.Warnf("client.dnsutil.finder: getresolv(): id is empty")
 		return dnsutil.ResolvData{}, false, dnsutil.ErrBadRequest
 	}
 	//do req
-	resp, err := c.client.GetResolv(ctx, &pb.GetResolvRequest{Id: id})
+	resp, err := c.client.GetResolv(ctx, &pb.GetResolvRequest{Id: sid})
 	if errNotFound(err) {
 		return dnsutil.ResolvData{}, false, nil
 	}
 	if err != nil {
-		c.logger.Warnf("client.dnsutil.finder: getresolv(%s): %v", id, err)
+		c.logger.Warnf("client.dnsutil.finder: getresolv(%v): %v", id, err)
 		return dnsutil.ResolvData{}, false, c.mapError(err)
 	}
-	if resp.GetData() == nil {
-		c.logger.Errorf("client.dnsutil.finder: getresolv(%s): unexpected data empty", id)
+	rdpb := resp.GetData()
+	if rdpb == nil {
+		c.logger.Errorf("client.dnsutil.finder: getresolv(%v): unexpected data empty", id)
 		return dnsutil.ResolvData{}, false, dnsutil.ErrInternal
 	}
-	//map data to object
-	data, err := encoding.ResolvData(resp.GetData())
+	//map rd to object
+	var rd dnsutil.ResolvData
+	err = encoding.ResolvData(rdpb, &rd)
 	if err != nil {
-		c.logger.Warnf("client.dnsutil.finder: getresolv(%s): converting data: %v", id, err)
+		c.logger.Warnf("client.dnsutil.finder: getresolv(%v): converting data: %v", id, err)
 		return dnsutil.ResolvData{}, false, dnsutil.ErrInternal
 	}
-	return data, true, nil
+	return rd, true, nil
 }
 
 // ListResolvs implements dnsutil.Finder interface
@@ -124,28 +128,30 @@ func (c *Client) ListResolvs(ctx context.Context, filters []dnsutil.ResolvsFilte
 		Filters: make([]*pb.ResolvsFilter, 0, len(filters)),
 	}
 	for _, f := range filters {
-		filterpb, err := encoding.ResolvsFilterPB(f)
+		fpb := &pb.ResolvsFilter{}
+		err := encoding.ResolvsFilterPB(&f, fpb)
 		if err != nil {
 			c.logger.Warnf("client.dnsutil.finder: listresolvs(): bad filter: %v", err)
 			return nil, "", dnsutil.ErrBadRequest
 		}
-		req.Filters = append(req.Filters, filterpb)
+		req.Filters = append(req.Filters, fpb)
 	}
 	//do list
 	resp, err := c.client.ListResolvs(ctx, req)
 	if err != nil {
-		c.logger.Warnf("client.dnsutil.finder: listresolvs(%s): %v", err)
+		c.logger.Warnf("client.dnsutil.finder: listresolvs(): %v", err)
 		return nil, "", c.mapError(err)
 	}
 	//process response
 	data := make([]dnsutil.ResolvData, 0, len(resp.GetData()))
-	for _, rpb := range resp.GetData() {
-		r, err := encoding.ResolvData(rpb)
+	for _, rdpb := range resp.GetData() {
+		var rd dnsutil.ResolvData
+		err := encoding.ResolvData(rdpb, &rd)
 		if err != nil {
-			c.logger.Errorf("client.dnsutil.finder: listresolvs(%s): encoding returned data: %v", err)
+			c.logger.Errorf("client.dnsutil.finder: listresolvs(): encoding returned data: %v", err)
 			return nil, "", c.mapError(dnsutil.ErrInternal)
 		}
-		data = append(data, r)
+		data = append(data, rd)
 	}
 	return data, resp.GetNext(), nil
 }

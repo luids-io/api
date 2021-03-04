@@ -11,8 +11,8 @@ import (
 	"github.com/luids-io/api/dnsutil/grpc/pb"
 )
 
-// ResolvsFilter returns ResolvsFilter from PB
-func ResolvsFilter(src *pb.ResolvsFilter) (dst dnsutil.ResolvsFilter, err error) {
+// ResolvsFilter copy info from pb
+func ResolvsFilter(src *pb.ResolvsFilter, dst *dnsutil.ResolvsFilter) (err error) {
 	if src.Since != nil {
 		dst.Since, _ = ptypes.Timestamp(src.GetSince())
 	}
@@ -31,9 +31,8 @@ func ResolvsFilter(src *pb.ResolvsFilter) (dst dnsutil.ResolvsFilter, err error)
 	return
 }
 
-// ResolvsFilterPB returns PB
-func ResolvsFilterPB(src dnsutil.ResolvsFilter) (*pb.ResolvsFilter, error) {
-	dst := &pb.ResolvsFilter{}
+// ResolvsFilterPB copy info to pb
+func ResolvsFilterPB(src *dnsutil.ResolvsFilter, dst *pb.ResolvsFilter) (err error) {
 	if !src.Since.IsZero() {
 		dst.Since, _ = ptypes.TimestampProto(src.Since)
 	}
@@ -55,5 +54,5 @@ func ResolvsFilterPB(src dnsutil.ResolvsFilter) (*pb.ResolvsFilter, error) {
 	dst.ReturnCode = int32(src.ReturnCode)
 	dst.Tld = src.TLD
 	dst.TldPlusOne = src.TLDPlusOne
-	return dst, nil
+	return
 }

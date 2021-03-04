@@ -57,19 +57,25 @@ func RegisterServer(server *grpc.Server, service *Service) {
 // SaveResolv implements grpc interface.
 func (s *Service) SaveResolv(ctx context.Context, req *pb.SaveResolvRequest) (*pb.SaveResolvResponse, error) {
 	//get request
-	data, err := encoding.FromSaveResolvRequest(req)
+	rdpb := req.GetResolv()
+	if rdpb == nil {
+		s.logger.Warnf("service.dnsutil.archive: [peer=%s] saveresolv(): nil data", getPeerAddr(ctx))
+		return nil, s.mapError(dnsutil.ErrBadRequest)
+	}
+	var rd dnsutil.ResolvData
+	err := encoding.ResolvData(rdpb, &rd)
 	if err != nil {
-		s.logger.Warnf("service.dnsutil.archive: [peer=%s] saveresolv(%v,%v): %v", getPeerAddr(ctx), data.Client, data.QID, err)
+		s.logger.Warnf("service.dnsutil.archive: [peer=%s] saveresolv(%v): %v", getPeerAddr(ctx), rd.ID, err)
 		return nil, s.mapError(dnsutil.ErrBadRequest)
 	}
 	//do save
-	newid, err := s.archiver.SaveResolv(ctx, data)
+	rid, err := s.archiver.SaveResolv(ctx, rd)
 	if err != nil {
-		s.logger.Warnf("service.dnsutil.archive: [peer=%s] saveresolv(%v,%v): %v", getPeerAddr(ctx), data.Client, data.QID, err)
+		s.logger.Warnf("service.dnsutil.archive: [peer=%s] saveresolv(%v): %v", getPeerAddr(ctx), rd.ID, err)
 		return nil, s.mapError(err)
 	}
 	//return response
-	return &pb.SaveResolvResponse{Id: newid}, nil
+	return &pb.SaveResolvResponse{Id: rid.String()}, nil
 }
 
 //mapping errors

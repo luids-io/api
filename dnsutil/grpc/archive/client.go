@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/status"
 
+	"github.com/google/uuid"
 	"github.com/luids-io/api/dnsutil"
 	"github.com/luids-io/api/dnsutil/grpc/encoding"
 	"github.com/luids-io/api/dnsutil/grpc/pb"
@@ -73,24 +74,30 @@ func NewClient(conn *grpc.ClientConn, opt ...ClientOption) *Client {
 }
 
 // SaveResolv implements dnsutil.Archiver interface.
-func (c *Client) SaveResolv(ctx context.Context, data *dnsutil.ResolvData) (string, error) {
+func (c *Client) SaveResolv(ctx context.Context, rd dnsutil.ResolvData) (uuid.UUID, error) {
 	if c.closed {
-		c.logger.Warnf("client.dnsutil.archive: saveresolv(%v,%v): client is closed", data.Client, data.QID)
-		return "", dnsutil.ErrUnavailable
+		c.logger.Warnf("client.dnsutil.archive: saveresolv(%v): client is closed", rd.ID)
+		return uuid.Nil, dnsutil.ErrUnavailable
 	}
 	//create request
-	req, err := encoding.SaveResolvRequest(data)
+	rdpb := &pb.ResolvData{}
+	err := encoding.ResolvDataPB(&rd, rdpb)
 	if err != nil {
-		c.logger.Warnf("client.dnsutil.archive: saveresolv(%v,%v): %v", data.Client, data.QID, err)
-		return "", dnsutil.ErrBadRequest
+		c.logger.Warnf("client.dnsutil.archive: saveresolv(%v): %v", rd.ID, err)
+		return uuid.Nil, dnsutil.ErrBadRequest
 	}
 	//do save
-	resp, err := c.client.SaveResolv(ctx, req)
+	resp, err := c.client.SaveResolv(ctx, &pb.SaveResolvRequest{Resolv: rdpb})
 	if err != nil {
-		c.logger.Warnf("client.dnsutil.archive: saveresolv(%v,%v): %v", data.Client, data.QID, err)
-		return "", c.mapError(err)
+		c.logger.Warnf("client.dnsutil.archive: saveresolv(%v): %v", rd.ID, err)
+		return uuid.Nil, c.mapError(err)
 	}
-	return resp.GetId(), nil
+	rid, err := uuid.Parse(resp.GetId())
+	if err != nil {
+		c.logger.Warnf("client.dnsutil.archive: saveresolv(%v): invalid returned id: %v", rd.ID, err)
+		return uuid.Nil, c.mapError(err)
+	}
+	return rid, nil
 }
 
 //mapping errors.

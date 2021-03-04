@@ -3,6 +3,7 @@
 syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
+import "github.com/luids-io/api/schemas/dnsutil/common.proto";
 
 package luids.dnsutil.v1;
 option go_package = "github.com/luids-io/api/dnsutil/grpc/pb";
@@ -10,32 +11,6 @@ option go_package = "github.com/luids-io/api/dnsutil/grpc/pb";
 service Finder {
     rpc GetResolv (GetResolvRequest) returns (GetResolvResponse) {}
     rpc ListResolvs (ListResolvsRequest) returns (ListResolvsResponse) {}
-}
-
-message ResolvData {
-    string id = 1;
-    google.protobuf.Timestamp ts = 2;
-    int64 duration = 3;
-    string server_ip = 4;
-    string client_ip = 5;
-    int32 qid = 6;
-    string name = 7;
-    bool is_ipv6 = 8;
-    message QueryFlags {
-        bool do = 1;
-        bool authenticated_data = 2;
-        bool checking_disabled = 3;
-    }
-    QueryFlags query_flags = 9;
-    int32 return_code = 10;
-    repeated string resolved_ips = 11;
-    message ResponseFlags {
-        bool authenticated_data = 1;
-    }
-    repeated string resolved_cnames = 12;
-    ResponseFlags response_flags = 13;
-    string tld = 14;
-    string tld_plus_one = 15;
 }
 
 message GetResolvRequest {

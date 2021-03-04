@@ -9,14 +9,21 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	"github.com/google/uuid"
 
 	"github.com/luids-io/api/dnsutil"
 	"github.com/luids-io/api/dnsutil/grpc/pb"
 )
 
-// ResolvData returns ResolvData from request
-func ResolvData(src *pb.ResolvData) (dst dnsutil.ResolvData, err error) {
-	dst.ID = src.Id
+// ResolvData copy info from pb
+func ResolvData(src *pb.ResolvData, dst *dnsutil.ResolvData) (err error) {
+	if src.Id != "" {
+		dst.ID, err = uuid.Parse(src.Id)
+		if err != nil {
+			err = fmt.Errorf("bad id format: %v", err)
+			return
+		}
+	}
 	dst.Timestamp, _ = ptypes.Timestamp(src.GetTs())
 	dst.Duration = time.Duration(src.GetDuration())
 	dst.Server = net.ParseIP(src.GetServerIp())
@@ -34,14 +41,10 @@ func ResolvData(src *pb.ResolvData) (dst dnsutil.ResolvData, err error) {
 	dst.Name = src.GetName()
 	dst.IsIPv6 = src.GetIsIpv6()
 	srcQueryFlags := src.GetQueryFlags()
-	if srcQueryFlags == nil {
-		err = errors.New("query flags is empty")
-		return
-	}
-	dst.QueryFlags = dnsutil.ResolvQueryFlags{
-		Do:                srcQueryFlags.GetDo(),
-		AuthenticatedData: srcQueryFlags.GetAuthenticatedData(),
-		CheckingDisabled:  srcQueryFlags.GetCheckingDisabled(),
+	if srcQueryFlags != nil {
+		dst.QueryFlags.Do = srcQueryFlags.GetDo()
+		dst.QueryFlags.AuthenticatedData = srcQueryFlags.GetAuthenticatedData()
+		dst.QueryFlags.CheckingDisabled = srcQueryFlags.GetCheckingDisabled()
 	}
 	// get response info
 	dst.ReturnCode = int(src.GetReturnCode())
@@ -65,12 +68,8 @@ func ResolvData(src *pb.ResolvData) (dst dnsutil.ResolvData, err error) {
 			dst.ResolvedCNAMEs = append(dst.ResolvedCNAMEs, r)
 		}
 	}
-	if srcResponseFlags == nil {
-		err = errors.New("response flags is empty")
-		return
-	}
-	dst.ResponseFlags = dnsutil.ResolvResponseFlags{
-		AuthenticatedData: srcResponseFlags.GetAuthenticatedData(),
+	if srcResponseFlags != nil {
+		dst.ResponseFlags.AuthenticatedData = srcResponseFlags.GetAuthenticatedData()
 	}
 	dst.TLD = src.GetTld()
 	dst.TLDPlusOne = src.GetTldPlusOne()
@@ -78,21 +77,19 @@ func ResolvData(src *pb.ResolvData) (dst dnsutil.ResolvData, err error) {
 }
 
 // ResolvDataPB returns a new protobuf request from data
-func ResolvDataPB(src *dnsutil.ResolvData) (*pb.ResolvData, error) {
+func ResolvDataPB(src *dnsutil.ResolvData, dst *pb.ResolvData) (err error) {
 	tstamp, _ := ptypes.TimestampProto(src.Timestamp)
-	dst := &pb.ResolvData{
-		Id:         src.ID,
-		Ts:         tstamp,
-		Duration:   int64(src.Duration),
-		ServerIp:   src.Server.String(),
-		ClientIp:   src.Client.String(),
-		Qid:        int32(src.QID),
-		Name:       src.Name,
-		IsIpv6:     src.IsIPv6,
-		ReturnCode: int32(src.ReturnCode),
-		Tld:        src.TLD,
-		TldPlusOne: src.TLDPlusOne,
-	}
+	dst.Id = src.ID.String()
+	dst.Ts = tstamp
+	dst.Duration = int64(src.Duration)
+	dst.ServerIp = src.Server.String()
+	dst.ClientIp = src.Client.String()
+	dst.Qid = int32(src.QID)
+	dst.Name = src.Name
+	dst.IsIpv6 = src.IsIPv6
+	dst.ReturnCode = int32(src.ReturnCode)
+	dst.Tld = src.TLD
+	dst.TldPlusOne = src.TLDPlusOne
 	dst.QueryFlags = &pb.ResolvData_QueryFlags{
 		Do:                src.QueryFlags.Do,
 		AuthenticatedData: src.QueryFlags.AuthenticatedData,
@@ -113,5 +110,5 @@ func ResolvDataPB(src *dnsutil.ResolvData) (*pb.ResolvData, error) {
 			dst.ResolvedCnames = append(dst.ResolvedCnames, r)
 		}
 	}
-	return dst, nil
+	return
 }
